@@ -2,18 +2,158 @@ import Course from '../models/Course.js';
 import ExamSchedule from '../models/ExamSchedule.js';
 import Teacher from '../models/Teacher.js';
 import Student from '../models/Student.js';
+import AcademicEnrollmentDraft from '../models/AcademicEnrollmentDraft.js';
 import CurriculumPlan from '../models/CurriculumPlan.js';
 import AcademicPlan from '../models/AcademicPlan.js';
 import LeaveRequest from '../models/LeaveRequest.js';
 import { sendSuccess, sendError, getPagination, paginationMeta } from '../utils/apiResponse.js';
 
 const buildTextFilter = (search) => (search ? { $text: { $search: search } } : {});
+const ROLL_NUMBER_PATTERN = /^[A-Z0-9-]{5,20}$/i;
+const IMAGE_TYPES = new Set(['image/jpeg', 'image/png']);
+const DOCUMENT_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
+const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
+const MAX_DOCUMENT_SIZE = 5 * 1024 * 1024;
+
+const PROGRAM_CATALOG = [
+  { id: 'btech-cse', name: 'B.Tech Computer Science', department: 'Computer Science', durationYears: 4, feePerSemester: 85000 },
+  { id: 'btech-ece', name: 'B.Tech Electronics', department: 'Electronics', durationYears: 4, feePerSemester: 80000 },
+  { id: 'btech-me', name: 'B.Tech Mechanical Engineering', department: 'Mechanical Engineering', durationYears: 4, feePerSemester: 78000 },
+  { id: 'btech-civil', name: 'B.Tech Civil Engineering', department: 'Civil Engineering', durationYears: 4, feePerSemester: 76000 },
+  { id: 'mba', name: 'MBA', department: 'Business Administration', durationYears: 2, feePerSemester: 95000 },
+];
 
 const generatePassword = (name = 'teacher') => {
   const safeName = name.replace(/[^a-zA-Z]/g, '').slice(0, 4).toLowerCase() || 'acad';
   const random = Math.random().toString(36).slice(-4).toUpperCase();
   const digits = Math.floor(100 + Math.random() * 900);
   return `${safeName}@${random}${digits}`;
+};
+
+const sanitizeAsset = (asset = {}) => ({
+  name: asset.name || '',
+  mimeType: asset.mimeType || '',
+  size: Number(asset.size) || 0,
+  content: asset.content || '',
+  width: asset.width ? Number(asset.width) : undefined,
+  height: asset.height ? Number(asset.height) : undefined,
+});
+
+const validateProfilePhoto = (photo) => {
+  if (!photo?.content) return null;
+  const normalized = sanitizeAsset(photo);
+  if (!IMAGE_TYPES.has(normalized.mimeType)) return 'Profile photo must be JPG or PNG.';
+  if (normalized.size > MAX_IMAGE_SIZE) return 'Profile photo must be 2 MB or less.';
+  if ((normalized.width && normalized.width < 256) || (normalized.height && normalized.height < 256)) {
+    return 'Profile photo resolution must be at least 256 x 256.';
+  }
+  return null;
+};
+
+const validateDocuments = (documents = []) => {
+  for (const document of documents) {
+    if (!document?.type || !document?.file?.content) continue;
+    const normalized = sanitizeAsset(document.file);
+    if (!DOCUMENT_TYPES.has(normalized.mimeType)) return `${document.type} must be PDF, JPG, or PNG.`;
+    if (normalized.size > MAX_DOCUMENT_SIZE) return `${document.type} must be 5 MB or less.`;
+  }
+  return null;
+};
+
+const normalizeDraftPayload = (payload = {}) => ({
+  personalDetails: {
+    fullLegalName: payload.personalDetails?.fullLegalName || '',
+    rollNumber: payload.personalDetails?.rollNumber?.toUpperCase?.() || '',
+    dateOfBirth: payload.personalDetails?.dateOfBirth || null,
+    email: payload.personalDetails?.email || '',
+    phone: payload.personalDetails?.phone || '',
+  },
+  academicInfo: {
+    programId: payload.academicInfo?.programId || '',
+    programName: payload.academicInfo?.programName || '',
+    department: payload.academicInfo?.department || '',
+    year: payload.academicInfo?.year || '',
+    semester: payload.academicInfo?.semester ? Number(payload.academicInfo.semester) : null,
+    feePerSemester: payload.academicInfo?.feePerSemester ? Number(payload.academicInfo.feePerSemester) : 0,
+    durationYears: payload.academicInfo?.durationYears ? Number(payload.academicInfo.durationYears) : 0,
+  },
+  profilePhoto: payload.profilePhoto?.content ? sanitizeAsset(payload.profilePhoto) : undefined,
+  documents: Array.isArray(payload.documents)
+    ? payload.documents
+      .filter((document) => document?.type)
+      .map((document) => ({
+        type: document.type,
+        file: document.file?.content ? sanitizeAsset(document.file) : undefined,
+      }))
+    : [],
+});
+
+const buildStudentFromEnrollment = (payload, draftId = null) => {
+  const normalized = normalizeDraftPayload(payload);
+  return {
+    rollNo: normalized.personalDetails.rollNumber,
+    name: normalized.personalDetails.fullLegalName,
+    email: normalized.personalDetails.email || `${normalized.personalDetails.rollNumber.toLowerCase()}@university.edu`,
+    phone: normalized.personalDetails.phone,
+    dateOfBirth: normalized.personalDetails.dateOfBirth,
+    avatar: normalized.profilePhoto?.content || null,
+    avatarMeta: normalized.profilePhoto?.content ? {
+      name: normalized.profilePhoto.name,
+      mimeType: normalized.profilePhoto.mimeType,
+      size: normalized.profilePhoto.size,
+      width: normalized.profilePhoto.width,
+      height: normalized.profilePhoto.height,
+    } : undefined,
+    department: normalized.academicInfo.department,
+    year: normalized.academicInfo.year,
+    semester: normalized.academicInfo.semester,
+    programId: normalized.academicInfo.programId,
+    programName: normalized.academicInfo.programName,
+    feePerSemester: normalized.academicInfo.feePerSemester,
+    durationYears: normalized.academicInfo.durationYears,
+    documents: normalized.documents
+      .filter((document) => document.file?.content)
+      .map((document) => ({
+        type: document.type,
+        name: document.file.name,
+        mimeType: document.file.mimeType,
+        size: document.file.size,
+        content: document.file.content,
+      })),
+    enrollmentSource: 'academics-enrollment',
+    enrollmentDraftId: draftId,
+  };
+};
+
+const validateEnrollmentPayload = async (payload) => {
+  const normalized = normalizeDraftPayload(payload);
+  const errors = {};
+
+  if (!normalized.personalDetails.fullLegalName.trim()) errors.fullLegalName = 'Full legal name is required.';
+  if (!normalized.personalDetails.rollNumber.trim()) errors.rollNumber = 'Roll number is required.';
+  else if (!ROLL_NUMBER_PATTERN.test(normalized.personalDetails.rollNumber)) errors.rollNumber = 'Use 5-20 letters, numbers, or dashes.';
+
+  if (!normalized.personalDetails.dateOfBirth || Number.isNaN(new Date(normalized.personalDetails.dateOfBirth).getTime())) {
+    errors.dateOfBirth = 'Valid date of birth is required.';
+  }
+
+  if (!normalized.academicInfo.programName.trim()) errors.programName = 'Program selection is required.';
+  if (!normalized.academicInfo.department.trim()) errors.department = 'Department is required.';
+  if (!normalized.academicInfo.year) errors.year = 'Academic year is required.';
+  if (!normalized.academicInfo.semester) errors.semester = 'Semester selection is required.';
+
+  const profilePhotoError = validateProfilePhoto(normalized.profilePhoto);
+  if (profilePhotoError) errors.profilePhoto = profilePhotoError;
+
+  const documentError = validateDocuments(normalized.documents);
+  if (documentError) errors.documents = documentError;
+
+  if (!errors.rollNumber) {
+    const existingRoll = await Student.findOne({ rollNo: normalized.personalDetails.rollNumber }).lean();
+    if (existingRoll) errors.rollNumber = 'Roll number already exists.';
+  }
+
+  return { normalized, errors };
 };
 
 export const getAcademicsOverview = async (req, res, next) => {
@@ -177,6 +317,86 @@ export const getTeacherRegistry = async (req, res, next) => {
     ]);
 
     return sendSuccess(res, { teachers, pagination: paginationMeta(total, page, lim) });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getEnrollmentPrograms = async (req, res, next) => {
+  try {
+    const activeCourses = await Course.find({ status: 'Active' })
+      .select('name department academicYear semester')
+      .sort({ name: 1 })
+      .lean();
+
+    const programs = PROGRAM_CATALOG.map((program) => ({
+      ...program,
+      courseCount: activeCourses.filter((course) => course.department === program.department).length,
+    }));
+
+    return sendSuccess(res, { programs });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const validateEnrollmentRollNumber = async (req, res, next) => {
+  try {
+    const rollNumber = (req.query.rollNumber || '').trim().toUpperCase();
+    if (!rollNumber) return sendError(res, 'Roll number is required.', 400);
+    if (!ROLL_NUMBER_PATTERN.test(rollNumber)) {
+      return sendError(res, 'Roll number format is invalid.', 400);
+    }
+
+    const exists = await Student.exists({ rollNo: rollNumber });
+    return sendSuccess(res, { rollNumber, available: !exists });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getEnrollmentDraft = async (req, res, next) => {
+  try {
+    const draft = await AcademicEnrollmentDraft.findOne({ createdBy: req.admin._id }).sort({ updatedAt: -1 }).lean();
+    return sendSuccess(res, { draft });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const saveEnrollmentDraft = async (req, res, next) => {
+  try {
+    const normalized = normalizeDraftPayload(req.body);
+    const profilePhotoError = validateProfilePhoto(normalized.profilePhoto);
+    const documentError = validateDocuments(normalized.documents);
+    if (profilePhotoError) return sendError(res, profilePhotoError, 400);
+    if (documentError) return sendError(res, documentError, 400);
+
+    const draft = await AcademicEnrollmentDraft.findOneAndUpdate(
+      { createdBy: req.admin._id },
+      normalized,
+      { upsert: true, new: true, runValidators: true, setDefaultsOnInsert: true }
+    );
+
+    return sendSuccess(res, { draft }, 'Enrollment draft saved successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createEnrollmentStudent = async (req, res, next) => {
+  try {
+    const { normalized, errors } = await validateEnrollmentPayload(req.body);
+    if (Object.keys(errors).length > 0) {
+      return sendError(res, 'Enrollment validation failed.', 400, errors);
+    }
+
+    const draft = await AcademicEnrollmentDraft.findOne({ createdBy: req.admin._id }).sort({ updatedAt: -1 });
+    const student = await Student.create(buildStudentFromEnrollment(normalized, draft?._id || null));
+
+    if (draft) await draft.deleteOne();
+
+    return sendSuccess(res, { student }, 'Student enrolled successfully', 201);
   } catch (error) {
     next(error);
   }

@@ -11,6 +11,11 @@ import {
   getStudentRegistry,
   updateStudentRegistry,
   getTeacherRegistry,
+  getEnrollmentPrograms,
+  validateEnrollmentRollNumber,
+  getEnrollmentDraft,
+  saveEnrollmentDraft,
+  createEnrollmentStudent,
   getCourses,
   getCourse,
   createCourse,
@@ -87,11 +92,32 @@ const leaveValidation = [
   body('endDate').isISO8601().withMessage('Valid end date is required'),
 ];
 
+const enrollmentDraftValidation = [
+  body('personalDetails').isObject().withMessage('Personal details are required'),
+  body('academicInfo').isObject().withMessage('Academic information is required'),
+];
+
+const enrollmentValidation = [
+  body('personalDetails.fullLegalName').trim().notEmpty().withMessage('Full legal name is required'),
+  body('personalDetails.rollNumber').trim().matches(/^[A-Z0-9-]{5,20}$/i).withMessage('Roll number format is invalid'),
+  body('personalDetails.dateOfBirth').isISO8601().withMessage('Valid date of birth is required'),
+  body('academicInfo.programName').trim().notEmpty().withMessage('Program is required'),
+  body('academicInfo.department').trim().notEmpty().withMessage('Department is required'),
+  body('academicInfo.year').isIn(['1st Year', '2nd Year', '3rd Year', '4th Year']).withMessage('Year is required'),
+  body('academicInfo.semester').isInt({ min: 1, max: 8 }).withMessage('Semester is required'),
+];
+
 router.get('/overview', getAcademicsOverview);
 router.get('/registries/summary', getRegistrySummary);
 router.get('/registries/students', getStudentRegistry);
 router.put('/registries/students/:id', updateStudentRegistry);
 router.get('/registries/teachers', getTeacherRegistry);
+router.get('/enrollment/programs', getEnrollmentPrograms);
+router.get('/enrollment/validate-roll', validateEnrollmentRollNumber);
+router.route('/enrollment/draft')
+  .get(getEnrollmentDraft)
+  .post(enrollmentDraftValidation, validate, saveEnrollmentDraft);
+router.post('/enrollment/students', enrollmentValidation, validate, createEnrollmentStudent);
 
 router.route('/teacher-accounts')
   .get(getTeacherAccounts)

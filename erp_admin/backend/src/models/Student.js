@@ -27,6 +27,13 @@ const studentSchema = new mongoose.Schema(
     dateOfBirth: { type: Date },
     gender: { type: String, enum: ['Male', 'Female', 'Other'] },
     avatar: { type: String, default: null },
+    avatarMeta: {
+      name: String,
+      mimeType: String,
+      size: Number,
+      width: Number,
+      height: Number,
+    },
     address: {
       street: String,
       city: String,
@@ -46,6 +53,10 @@ const studentSchema = new mongoose.Schema(
       required: true,
     },
     semester: { type: Number, min: 1, max: 8 },
+    programId: { type: String, trim: true },
+    programName: { type: String, trim: true },
+    feePerSemester: { type: Number, min: 0, default: 0 },
+    durationYears: { type: Number, min: 0, default: 0 },
     section: { type: String, default: 'A' },
     admissionDate: { type: Date, default: Date.now },
     graduationYear: { type: Number },
@@ -75,6 +86,20 @@ const studentSchema = new mongoose.Schema(
     },
 
     // ── Multi-tenancy placeholder ────────────────────────────
+    documents: [
+      {
+        type: {
+          type: String,
+          enum: ['Previous Transcript', 'ID Proof', 'Medical Certificate'],
+        },
+        name: String,
+        mimeType: String,
+        size: Number,
+        content: String,
+      },
+    ],
+    enrollmentSource: { type: String, default: 'manual' },
+    enrollmentDraftId: { type: mongoose.Schema.Types.ObjectId, ref: 'AcademicEnrollmentDraft', default: null },
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', default: null },
   },
   { timestamps: true }
