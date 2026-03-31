@@ -1,54 +1,90 @@
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useMemo, useState } from "react";
+
+import { loginUser } from "../services/api";
+
+const STORAGE_KEY = "erp-user-session";
 
 const AuthContext = createContext(null);
 
-// Default admin credentials — change these as you like
-const DEFAULT_ADMIN = {
-  username: 'admin',
-  password: 'admin@123',
-  name: 'Admin',
-  role: 'Administrator',
-  email: 'admin@university.edu',
-  avatar: null,
-};
+function getStoredSession() {
+  try {
+    const value = localStorage.getItem(STORAGE_KEY);
+    return value ? JSON.parse(value) : null;
+  } catch {
+    return null;
+  }
+}
 
 export function AuthProvider({ children }) {
-  const [user, setUser] = useState(() => {
-    const stored = localStorage.getItem('erp_admin_user');
-    return stored ? JSON.parse(stored) : null;
-  });
-  const [loginError, setLoginError] = useState('');
+  const [session, setSession] = useState(() => getStoredSession());
+  const [authLoading, setAuthLoading] = useState(false);
 
-  const login = (username, password) => {
-    if (username === DEFAULT_ADMIN.username && password === DEFAULT_ADMIN.password) {
-      const userData = {
-        username: DEFAULT_ADMIN.username,
-        name: DEFAULT_ADMIN.name,
-        role: DEFAULT_ADMIN.role,
-        email: DEFAULT_ADMIN.email,
-      };
-      setUser(userData);
-      localStorage.setItem('erp_admin_user', JSON.stringify(userData));
-      setLoginError('');
-      return true;
+  useEffect(() => {
+    if (session) {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(session));
     } else {
-      setLoginError('Invalid username or password.');
-      return false;
+      localStorage.removeItem(STORAGE_KEY);
     }
-  };
+  }, [session]);
 
-  const logout = () => {
-    setUser(null);
-    localStorage.removeItem('erp_admin_user');
-  };
+  const value = useMemo(
+    () => ({
+      session,
+      isAuthenticated: Boolean(session),
+      authLoading,
+      login: async ({ username, password, tenant, role }) => {
+        const normalizedUsername = username.trim();
+        const normalizedTenant = tenant.trim();
+        const normalizedPassword = password.trim();
+        const tenantSlug = normalizedTenant.toLowerCase().replace(/\s+/g, "-");
 
-  return (
-    <AuthContext.Provider value={{ user, login, logout, loginError, setLoginError }}>
-      {children}
-    </AuthContext.Provider>
+        if (!normalizedUsername || !normalizedPassword || !normalizedTenant || !role) {
+          return { ok: false, message: "Please complete all login fields." };
+        }
+
+        try {
+          setAuthLoading(true);
+          const response = await loginUser({
+            tenant: tenantSlug,
+            role,
+            username: normalizedUsername,
+            password: normalizedPassword,
+          });
+
+          const nextSession = {
+            username: response.user.username,
+            tenant: normalizedTenant,
+            tenantSlug,
+            role: response.user.role,
+            displayName: response.user.displayName,
+            photoDataUrl: response.user.photoDataUrl || "",
+            profile: response.user.profile || null,
+            avatarSeed: response.user.displayName.slice(0, 2).toUpperCase(),
+            lastLogin: new Date().toISOString(),
+          };
+
+          setSession(nextSession);
+          return { ok: true };
+        } catch (error) {
+          return { ok: false, message: error.message };
+        } finally {
+          setAuthLoading(false);
+        }
+      },
+      logout: () => setSession(null),
+    }),
+    [authLoading, session],
   );
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+
+  if (!context) {
+    throw new Error("useAuth must be used within AuthProvider");
+  }
+
+  return context;
 }
