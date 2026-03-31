@@ -60,6 +60,21 @@ const teacherSchema = new mongoose.Schema(
       enum: ['Active', 'On Leave', 'Resigned', 'Retired'],
       default: 'Active',
     },
+    accountStatus: {
+      type: String,
+      enum: ['Pending Setup', 'Active', 'Password Reset Required', 'Disabled'],
+      default: 'Pending Setup',
+    },
+    portalUsername: {
+      type: String,
+      trim: true,
+      lowercase: true,
+      default: '',
+    },
+    lastPasswordGeneratedAt: {
+      type: Date,
+      default: null,
+    },
 
     tenantId: { type: mongoose.Schema.Types.ObjectId, ref: 'Tenant', default: null },
   },

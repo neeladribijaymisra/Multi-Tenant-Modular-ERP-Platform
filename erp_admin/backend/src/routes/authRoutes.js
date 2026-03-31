@@ -1,9 +1,9 @@
 import express from 'express';
 import {
   login, logout, refreshToken,
-  getMe, changePassword, updateProfile,
+  getMe, changePassword, updateProfile, getPortalSettings, updatePortalSettings,
 } from '../controllers/authController.js';
-import { protect } from '../middleware/auth.js';
+import { protect, authorize } from '../middleware/auth.js';
 import { body } from 'express-validator';
 import validate from '../middleware/validate.js';
 
@@ -21,12 +21,14 @@ router.post(
 );
 
 router.post('/refresh', refreshToken);
+router.get('/portal-settings', getPortalSettings);
 
 // Protected
 router.use(protect);
 router.post('/logout', logout);
 router.get('/me', getMe);
 router.put('/profile', updateProfile);
+router.put('/portal-settings', authorize('superadmin'), updatePortalSettings);
 router.put(
   '/change-password',
   [
