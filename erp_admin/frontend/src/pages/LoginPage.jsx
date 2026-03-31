@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import {
   TextField, Button, InputAdornment, IconButton, Alert, CircularProgress,
@@ -6,6 +6,7 @@ import {
 import {
   Visibility, VisibilityOff, School, LockOutlined, PersonOutlined,
 } from '@mui/icons-material';
+import api from '../utils/api';
 
 export default function LoginPage() {
   const { login, loginError, setLoginError } = useAuth();
@@ -14,16 +15,35 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const accountTypes = ['Accounts', 'HR', 'Academics', 'Master Admin'];
+  const [portalAccess, setPortalAccess] = useState({ accounts: false, hr: false, academics: false, masterAdmin: true });
+  const accountTypes = [
+    { label: 'Accounts', key: 'accounts' },
+    { label: 'HR', key: 'hr' },
+    { label: 'Academics', key: 'academics' },
+    { label: 'Master Admin', key: 'masterAdmin' },
+  ];
+
+  useEffect(() => {
+    const loadPortalSettings = async () => {
+      try {
+        const { data } = await api.get('/auth/portal-settings');
+        setPortalAccess(data.data.portalAccess);
+      } catch {
+        setPortalAccess({ accounts: false, hr: false, academics: false, masterAdmin: true });
+      }
+    };
+    loadPortalSettings();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (selectedAccount !== 'Master Admin') {
-      setLoginError('Only Master Admin login is enabled right now.');
+    const selectedPortal = accountTypes.find((item) => item.label === selectedAccount)?.key || 'masterAdmin';
+    if (!portalAccess[selectedPortal]) {
+      setLoginError(`${selectedAccount} portal is currently turned off by the Master Admin.`);
       return;
     }
     setLoading(true);
-    await login(username, password, 'superadmin');
+    await login(username, password, selectedPortal === 'masterAdmin' ? 'superadmin' : null, selectedPortal);
     setLoading(false);
   };
 
@@ -160,17 +180,17 @@ export default function LoginPage() {
                 <p className="text-xs font-semibold uppercase tracking-widest text-slate-400 mb-2">Portal Access</p>
                 <div className="grid grid-cols-2 gap-2">
                   {accountTypes.map((account) => {
-                    const isActive = selectedAccount === account;
-                    const isEnabled = account === 'Master Admin';
+                    const isActive = selectedAccount === account.label;
+                    const isEnabled = portalAccess[account.key];
 
                     return (
                       <button
-                        key={account}
+                        key={account.key}
                         type="button"
                         onClick={() => {
-                          setSelectedAccount(account);
-                          if (account !== 'Master Admin') {
-                            setLoginError('Only Master Admin login is enabled right now.');
+                          setSelectedAccount(account.label);
+                          if (!isEnabled) {
+                            setLoginError(`${account.label} portal is currently turned off by the Master Admin.`);
                           } else {
                             setLoginError('');
                           }
@@ -181,13 +201,13 @@ export default function LoginPage() {
                             : 'border-slate-200 bg-white text-slate-500'
                         } ${!isEnabled ? 'opacity-70' : ''}`}
                       >
-                        {account}
+                        {account.label}
                       </button>
                     );
                   })}
                 </div>
                 <p className="text-xs text-slate-400 mt-2">
-                  Master Admin login is active. Other portals are reserved for future role-based access.
+                  Master Admin is always available. Other portals can be turned on or off from master settings.
                 </p>
               </div>
 
@@ -205,7 +225,7 @@ export default function LoginPage() {
                 type="submit"
                 variant="contained"
                 fullWidth
-                disabled={loading || !username || !password || selectedAccount !== 'Master Admin'}
+                disabled={loading || !username || !password || !portalAccess[accountTypes.find((item) => item.label === selectedAccount)?.key || 'masterAdmin']}
                 sx={{ mt: 1, py: 1.4, fontSize: '0.95rem', fontWeight: 600 }}
               >
                 {loading ? <CircularProgress size={20} color="inherit" /> : 'Sign in to Dashboard'}
@@ -214,7 +234,7 @@ export default function LoginPage() {
 
             <div className="mt-6 pt-5 border-t border-slate-100">
               <p className="text-center text-xs text-slate-400">
-                Run <span className="font-mono text-slate-600">npm run seed</span> in backend to create the default admin account.
+                 <span className="font-mono text-slate-600">Contact Master Admin for access</span> if you do not have credentials.
               </p>
             </div>
           </div>

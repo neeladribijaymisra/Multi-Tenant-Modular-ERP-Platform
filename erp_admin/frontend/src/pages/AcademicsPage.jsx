@@ -1,260 +1,211 @@
-import { useState, useEffect, useCallback } from 'react';
-import {
-  Button, Chip, Tab, Tabs, LinearProgress, TextField, FormControl, InputLabel,
-  Select, MenuItem, CircularProgress, Alert, IconButton, Tooltip,
-} from '@mui/material';
-import { Add, MenuBook, CalendarToday, Assignment, CheckCircle, Edit, Delete } from '@mui/icons-material';
+import { useCallback, useEffect, useState } from 'react';
+import { Alert, Avatar, Button, Chip, CircularProgress, FormControl, IconButton, InputLabel, MenuItem, Select, Tab, Tabs, TextField, Tooltip } from '@mui/material';
+import { Add, Delete, Edit, LockReset } from '@mui/icons-material';
 import api from '../utils/api';
-import { DEPARTMENTS } from '../utils/constants';
+import { DEPARTMENTS, FACULTY_DESIGNATIONS } from '../utils/constants';
+import { getInitials, stringToColor } from '../utils/helpers';
 import FormDialog from '../components/common/FormDialog';
 
-const DEPT_COLORS = { 'Computer Science': '#4f46e5', 'Electronics': '#06b6d4', 'Mathematics': '#ef4444', 'Physics': '#8b5cf6', 'Business Administration': '#10b981', 'Mechanical Engineering': '#f59e0b' };
-const getDeptColor = (dept) => DEPT_COLORS[dept] || '#64748b';
-const EXAM_TYPES = ['Mid-Semester', 'End-Semester', 'Internal', 'Practical', 'Viva'];
+const teacherStatuses = ['Active', 'On Leave', 'Resigned', 'Retired'];
+const accountStatuses = ['Pending Setup', 'Active', 'Password Reset Required', 'Disabled'];
+const examTypes = ['Mid-Semester', 'End-Semester', 'Internal', 'Practical', 'Viva'];
+const curriculumStatuses = ['Draft', 'Active', 'Archived'];
+const planTypes = ['Academic Calendar', 'Assessment Plan', 'Program Review', 'Department Plan', 'Record Update'];
+const approvalStatuses = ['Draft', 'Pending Approval', 'Approved', 'Rejected'];
+const recordStatuses = ['Pending Update', 'In Review', 'Recorded', 'Archived'];
+const leaveTypes = ['Casual Leave', 'Medical Leave', 'Earned Leave', 'Maternity Leave', 'Duty Leave'];
+const leaveStatuses = ['Pending', 'Approved', 'Rejected', 'Cancelled'];
 
+const emptyTeacher = { name: '', email: '', phone: '', facultyId: '', department: '', designation: '', subjects: '', experienceYears: '', status: 'Active', accountStatus: 'Pending Setup', avatar: '' };
 const emptyCourse = { name: '', code: '', department: '', semester: '', credits: '', capacity: '', status: 'Active' };
-const emptyExam = { course: '', examType: 'Mid-Semester', date: '', startTime: '', endTime: '', venue: '', maxMarks: '', status: 'Scheduled' };
+const emptyExam = { course: '', examType: 'Mid-Semester', date: '', startTime: '', endTime: '', venue: '', maxMarks: '' };
+const emptyCurriculum = { title: '', program: '', department: '', academicYear: '', semester: '', status: 'Draft', coursesCount: '', reviewCycle: '', notes: '', owner: '' };
+const emptyPlan = { title: '', department: '', planType: 'Academic Calendar', academicYear: '', owner: '', approver: '', approvalStatus: 'Draft', recordStatus: 'Pending Update', effectiveDate: '', notes: '' };
+const emptyLeave = { teacher: '', leaveType: 'Casual Leave', startDate: '', endDate: '', days: '', reason: '', status: 'Pending', reviewNotes: '' };
+const emptyStudentPhoto = { avatar: '' };
+
+function Section({ title, subtitle, action, children }) {
+  return (
+    <div className="bg-white rounded-2xl border border-slate-100 shadow-card animate-fadeInUp">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 px-5 py-4 border-b border-slate-100">
+        <div>
+          <h2 className="font-heading text-lg font-700 text-slate-900">{title}</h2>
+          <p className="text-slate-500 text-sm mt-1">{subtitle}</p>
+        </div>
+        {action}
+      </div>
+      <div className="p-5">{children}</div>
+    </div>
+  );
+}
+
+function Row({ title, meta, chips = [], actions, avatar }) {
+  return (
+    <div className="flex items-start gap-3 p-4 rounded-xl border border-slate-100">
+      <Avatar src={avatar || ''} sx={{ width: 42, height: 42, bgcolor: stringToColor(title), fontSize: 14, fontWeight: 700 }}>
+        {getInitials(title)}
+      </Avatar>
+      <div className="flex-1 min-w-0">
+        <p className="font-semibold text-sm text-slate-900">{title}</p>
+        <p className="text-xs text-slate-500 mt-1 break-words">{meta}</p>
+        <div className="flex flex-wrap gap-2 mt-3">
+          {chips.map((chip) => (
+            <Chip key={`${title}-${chip}`} label={chip} size="small" sx={{ bgcolor: '#f8fafc', color: '#475569', fontWeight: 600, fontSize: '0.72rem', height: 24 }} />
+          ))}
+        </div>
+      </div>
+      {actions && <div className="flex items-center gap-1">{actions}</div>}
+    </div>
+  );
+}
 
 export default function AcademicsPage() {
   const [tab, setTab] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState('');
+  const [passwordNotice, setPasswordNotice] = useState('');
+  const [overview, setOverview] = useState({});
+  const [accounts, setAccounts] = useState([]);
+  const [students, setStudents] = useState([]);
+  const [teachers, setTeachers] = useState([]);
   const [courses, setCourses] = useState([]);
   const [exams, setExams] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [curriculumPlans, setCurriculumPlans] = useState([]);
+  const [academicPlans, setAcademicPlans] = useState([]);
+  const [leaveRequests, setLeaveRequests] = useState([]);
   const [dialog, setDialog] = useState({ open: false, type: '', mode: 'add', data: null });
+  const [teacherForm, setTeacherForm] = useState(emptyTeacher);
   const [courseForm, setCourseForm] = useState(emptyCourse);
   const [examForm, setExamForm] = useState(emptyExam);
-  const [saving, setSaving] = useState(false);
+  const [curriculumForm, setCurriculumForm] = useState(emptyCurriculum);
+  const [planForm, setPlanForm] = useState(emptyPlan);
+  const [leaveForm, setLeaveForm] = useState(emptyLeave);
+  const [studentPhotoForm, setStudentPhotoForm] = useState(emptyStudentPhoto);
 
-  const fetchCourses = useCallback(async () => {
+  const fetchAll = useCallback(async () => {
+    setLoading(true);
     try {
-      const { data } = await api.get('/academics/courses', { params: { limit: 50 } });
-      setCourses(data.data.courses);
-    } catch { setError('Failed to load courses.'); }
+      const [o, a, s, t, c, e, cp, ap, l] = await Promise.all([
+        api.get('/academics/overview'),
+        api.get('/academics/teacher-accounts', { params: { limit: 50 } }),
+        api.get('/academics/registries/students', { params: { limit: 50 } }),
+        api.get('/academics/registries/teachers', { params: { limit: 50 } }),
+        api.get('/academics/courses', { params: { limit: 50 } }),
+        api.get('/academics/exams', { params: { limit: 50 } }),
+        api.get('/academics/curriculum-plans', { params: { limit: 50 } }),
+        api.get('/academics/academic-plans', { params: { limit: 50 } }),
+        api.get('/academics/leave-requests', { params: { limit: 50 } }),
+      ]);
+      setOverview(o.data.data);
+      setAccounts(a.data.data.teachers);
+      setStudents(s.data.data.students);
+      setTeachers(t.data.data.teachers);
+      setCourses(c.data.data.courses);
+      setExams(e.data.data.exams);
+      setCurriculumPlans(cp.data.data.plans);
+      setAcademicPlans(ap.data.data.plans);
+      setLeaveRequests(l.data.data.requests);
+    } catch {
+      setError('Failed to load academics data.');
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  const fetchExams = useCallback(async () => {
-    try {
-      const { data } = await api.get('/academics/exams', { params: { limit: 50 } });
-      setExams(data.data.exams);
-    } catch { setError('Failed to load exams.'); }
-  }, []);
+  useEffect(() => { fetchAll(); }, [fetchAll]);
 
-  useEffect(() => {
-    Promise.all([fetchCourses(), fetchExams()]).finally(() => setLoading(false));
-  }, []);
-
-  const openCourseAdd = () => { setCourseForm(emptyCourse); setDialog({ open: true, type: 'course', mode: 'add', data: null }); };
-  const openCourseEdit = (c) => { setCourseForm({ name: c.name, code: c.code, department: c.department, semester: c.semester, credits: c.credits, capacity: c.capacity, status: c.status }); setDialog({ open: true, type: 'course', mode: 'edit', data: c }); };
-  const openExamAdd = () => { setExamForm(emptyExam); setDialog({ open: true, type: 'exam', mode: 'add', data: null }); };
   const closeDialog = () => { setDialog({ open: false, type: '', mode: 'add', data: null }); setError(''); };
+  const open = (type, mode = 'add', data = null) => setDialog({ open: true, type, mode, data });
 
-  const handleSaveCourse = async () => {
-    setSaving(true); setError('');
+  const saveAndRefresh = async (request) => {
+    setSaving(true);
+    setError('');
     try {
-      const payload = { ...courseForm, credits: Number(courseForm.credits), capacity: Number(courseForm.capacity) };
-      if (dialog.mode === 'add') await api.post('/academics/courses', payload);
-      else await api.put(`/academics/courses/${dialog.data._id}`, payload);
-      closeDialog(); fetchCourses();
-    } catch (err) { setError(err.response?.data?.message || 'Failed to save course.'); }
-    finally { setSaving(false); }
+      await request();
+      closeDialog();
+      await fetchAll();
+    } catch (err) {
+      setError(err.response?.data?.message || 'Save failed.');
+    } finally {
+      setSaving(false);
+    }
   };
 
-  const handleSaveExam = async () => {
-    setSaving(true); setError('');
+  const remove = async (path, message) => {
+    if (!window.confirm(message)) return;
     try {
-      await api.post('/academics/exams', {
-        ...examForm,
-        maxMarks: examForm.maxMarks ? Number(examForm.maxMarks) : undefined,
-      });
-      closeDialog(); fetchExams();
-    } catch (err) { setError(err.response?.data?.message || 'Failed to save exam.'); }
-    finally { setSaving(false); }
+      await api.delete(path);
+      fetchAll();
+    } catch {
+      setError('Delete failed.');
+    }
   };
 
-  const handleDeleteCourse = async (id) => {
-    if (!window.confirm('Delete this course?')) return;
-    try { await api.delete(`/academics/courses/${id}`); fetchCourses(); }
-    catch { setError('Failed to delete course.'); }
-  };
-
-  const handleDeleteExam = async (id) => {
-    if (!window.confirm('Delete this exam?')) return;
-    try { await api.delete(`/academics/exams/${id}`); fetchExams(); }
-    catch { setError('Failed to delete exam.'); }
-  };
+  const accountOptions = accounts.map((teacher) => <MenuItem key={teacher._id} value={teacher._id}>{teacher.name}</MenuItem>);
 
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fadeInUp">
         <div>
           <h1 className="font-heading text-2xl font-700 text-slate-900">Academics</h1>
-          <p className="text-slate-500 text-sm mt-0.5">Manage courses, exams, timetables, and academic records</p>
+          <p className="text-slate-500 text-sm mt-0.5">Add, edit, and monitor academic operations from one place.</p>
         </div>
-        <Button variant="contained" size="small" startIcon={<Add />} onClick={tab === 0 ? openCourseAdd : openExamAdd}>
-          {tab === 0 ? 'Add Course' : 'Schedule Exam'}
-        </Button>
       </div>
 
       {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
+      {passwordNotice && <Alert severity="success" onClose={() => setPasswordNotice('')}>{passwordNotice}</Alert>}
 
-      {/* Quick stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {[
-          { label: 'Active Courses', value: courses.filter((c) => c.status === 'Active').length, icon: MenuBook, color: '#4f46e5', bg: '#eef2ff' },
-          { label: 'Exams Scheduled', value: exams.filter((e) => e.status === 'Scheduled').length, icon: CalendarToday, color: '#f59e0b', bg: '#fffbeb' },
-          { label: 'Total Courses', value: courses.length, icon: Assignment, color: '#ef4444', bg: '#fef2f2' },
-          { label: 'Completed Exams', value: exams.filter((e) => e.status === 'Completed').length, icon: CheckCircle, color: '#10b981', bg: '#ecfdf5' },
-        ].map((s) => {
-          const Icon = s.icon;
-          return (
-            <div key={s.label} className="stat-card animate-fadeInUp flex items-center gap-4">
-              <div className="w-11 h-11 rounded-xl flex items-center justify-center flex-shrink-0" style={{ backgroundColor: s.bg }}>
-                <Icon sx={{ fontSize: 20, color: s.color }} />
-              </div>
-              <div>
-                <p className="font-heading text-xl font-700 text-slate-900">{s.value}</p>
-                <p className="text-slate-500 text-xs font-medium">{s.label}</p>
-              </div>
-            </div>
-          );
-        })}
+          ['Teacher Accounts', overview.teachers || 0],
+          ['Students', overview.students || 0],
+          ['Curriculum Plans', overview.curriculumPlans || 0],
+          ['Pending Leave', overview.pendingLeaveRequests || 0],
+        ].map(([label, value]) => (
+          <div key={label} className="stat-card animate-fadeInUp">
+            <p className="font-heading text-2xl font-700 text-slate-900">{value}</p>
+            <p className="text-slate-500 text-sm mt-1">{label}</p>
+          </div>
+        ))}
       </div>
 
-      {/* Tabs */}
       <div className="bg-white rounded-2xl border border-slate-100 shadow-card animate-fadeInUp">
-        <Tabs value={tab} onChange={(_, v) => setTab(v)} sx={{ px: 3, borderBottom: '1px solid #f1f5f9' }}>
-          <Tab label="Courses" sx={{ textTransform: 'none', fontFamily: '"DM Sans"', fontWeight: 600, fontSize: '0.875rem' }} />
-          <Tab label="Exam Schedule" sx={{ textTransform: 'none', fontFamily: '"DM Sans"', fontWeight: 600, fontSize: '0.875rem' }} />
+        <Tabs value={tab} onChange={(_, value) => setTab(value)} variant="scrollable" scrollButtons="auto" sx={{ px: 3, borderBottom: '1px solid #f1f5f9' }}>
+          {['Teacher Accounts', 'Registries', 'Courses & Exams', 'Curriculum Plans', 'Academic Plans', 'Leave Requests'].map((label) => (
+            <Tab key={label} label={label} sx={{ textTransform: 'none', fontFamily: '"DM Sans"', fontWeight: 600, fontSize: '0.875rem' }} />
+          ))}
         </Tabs>
 
         <div className="p-5">
-          {loading ? (
-            <div className="flex justify-center py-12"><CircularProgress /></div>
-          ) : tab === 0 ? (
-            <div className="space-y-3">
-              {courses.length === 0 ? (
-                <div className="text-center py-12 text-slate-400">No courses found. Add your first course.</div>
-              ) : courses.map((c) => (
-                <div key={c._id} className="flex items-center gap-4 p-4 rounded-xl border border-slate-100 hover:border-primary-200 hover:bg-slate-50 transition-all">
-                  <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0 font-mono font-700 text-xs"
-                    style={{ backgroundColor: getDeptColor(c.department) + '18', color: getDeptColor(c.department) }}>
-                    {c.code?.slice(0, 3)}
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <p className="font-semibold text-sm text-slate-900">{c.name}</p>
-                      <span className="font-mono text-xs text-slate-400">{c.code}</span>
-                    </div>
-                    <div className="flex items-center gap-3 mt-1 flex-wrap text-xs text-slate-500">
-                      <span>{c.faculty?.name || 'Unassigned'}</span>
-                      <span>·</span><span>{c.credits} credits</span>
-                      <span>·</span><span style={{ color: getDeptColor(c.department) }}>{c.department}</span>
-                    </div>
-                    {c.capacity > 0 && (
-                      <div className="flex items-center gap-2 mt-2">
-                        <LinearProgress variant="determinate" value={Math.min(((c.enrolledCount || 0) / c.capacity) * 100, 100)}
-                          sx={{ flex: 1, height: 5, borderRadius: 3, bgcolor: '#f1f5f9', '& .MuiLinearProgress-bar': { bgcolor: getDeptColor(c.department) } }} />
-                        <span className="text-xs text-slate-500 whitespace-nowrap">{c.enrolledCount || 0}/{c.capacity}</span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="flex items-center gap-2 flex-shrink-0">
-                    <Chip label={`Sem ${c.semester}`} size="small" sx={{ bgcolor: '#f8fafc', fontSize: '0.7rem', height: 22 }} />
-                    <Chip label={c.status} size="small" sx={{ bgcolor: '#ecfdf5', color: '#059669', fontWeight: 600, fontSize: '0.7rem', height: 22 }} />
-                    <Tooltip title="Edit"><IconButton size="small" onClick={() => openCourseEdit(c)}><Edit sx={{ fontSize: 15, color: '#64748b' }} /></IconButton></Tooltip>
-                    <Tooltip title="Delete"><IconButton size="small" onClick={() => handleDeleteCourse(c._id)}><Delete sx={{ fontSize: 15, color: '#ef4444' }} /></IconButton></Tooltip>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {exams.length === 0 ? (
-                <div className="text-center py-12 text-slate-400">No exams scheduled yet.</div>
-              ) : exams.map((e) => (
-                <div key={e._id} className="flex items-center gap-4 p-4 rounded-xl bg-slate-50 border border-slate-100">
-                  <div className="w-12 h-12 rounded-xl bg-amber-100 flex items-center justify-center flex-shrink-0">
-                    <CalendarToday sx={{ color: '#d97706', fontSize: 20 }} />
-                  </div>
-                  <div className="flex-1">
-                    <p className="font-semibold text-sm text-slate-900">{e.course?.name || 'Unknown Course'}</p>
-                    <div className="flex items-center gap-3 mt-1 flex-wrap text-xs text-slate-500">
-                      <span>{new Date(e.date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}</span>
-                      <span>·</span><span>{e.startTime} – {e.endTime}</span>
-                      <span>·</span><span>{e.venue}</span>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Chip label={e.examType} size="small" sx={{ bgcolor: '#fffbeb', color: '#d97706', fontWeight: 600, fontSize: '0.7rem', height: 22 }} />
-                    <Chip label={e.status} size="small" sx={{ bgcolor: e.status === 'Completed' ? '#ecfdf5' : '#eef2ff', color: e.status === 'Completed' ? '#059669' : '#4f46e5', fontWeight: 600, fontSize: '0.7rem', height: 22 }} />
-                    <Tooltip title="Delete"><IconButton size="small" onClick={() => handleDeleteExam(e._id)}><Delete sx={{ fontSize: 15, color: '#ef4444' }} /></IconButton></Tooltip>
-                  </div>
-                </div>
-              ))}
+          {loading ? <div className="flex justify-center py-12"><CircularProgress /></div> : (
+            <div className="space-y-5">
+              {tab === 0 && <Section title="Teacher Accounts" subtitle="Add, edit, delete teacher accounts and generate teacher passwords." action={<Button variant="contained" size="small" startIcon={<Add />} onClick={() => { setTeacherForm(emptyTeacher); open('teacher'); }}>Add Teacher</Button>}><div className="space-y-3">{accounts.map((teacher) => <Row key={teacher._id} title={teacher.name} meta={`${teacher.facultyId} | ${teacher.email} | ${teacher.department} | ${teacher.designation}`} chips={[teacher.status, teacher.accountStatus || 'Pending Setup', `${teacher.experienceYears || 0} yrs`]} avatar={teacher.avatar} actions={<><Tooltip title="Generate Password"><IconButton size="small" onClick={async () => { const { data } = await api.post(`/academics/teacher-accounts/${teacher._id}/generate-password`); setPasswordNotice(`Temporary password: ${data.data.generatedPassword}`); fetchAll(); }}><LockReset sx={{ fontSize: 18, color: '#d97706' }} /></IconButton></Tooltip><Tooltip title="Edit"><IconButton size="small" onClick={() => { setTeacherForm({ name: teacher.name, email: teacher.email, phone: teacher.phone || '', facultyId: teacher.facultyId, department: teacher.department, designation: teacher.designation, subjects: (teacher.subjects || []).join(', '), experienceYears: teacher.experienceYears || '', status: teacher.status, accountStatus: teacher.accountStatus || 'Pending Setup', avatar: teacher.avatar || '' }); open('teacher', 'edit', teacher); }}><Edit sx={{ fontSize: 16, color: '#64748b' }} /></IconButton></Tooltip><Tooltip title="Delete"><IconButton size="small" onClick={() => remove(`/academics/teacher-accounts/${teacher._id}`, 'Delete this teacher account?')}><Delete sx={{ fontSize: 16, color: '#ef4444' }} /></IconButton></Tooltip></>} />)}</div></Section>}
+
+              {tab === 1 && <div className="grid grid-cols-1 xl:grid-cols-2 gap-5"><Section title="Student Registry" subtitle="Maintain the student registry used by academics, including student photos."><div className="space-y-3">{students.map((student) => <Row key={student._id} title={student.name} meta={`${student.rollNo} | ${student.email} | ${student.department} | ${student.year || ''}`} chips={[student.status, student.feeStatus || 'Pending', `CGPA ${student.cgpa || 0}`]} avatar={student.avatar} actions={<Tooltip title="Update Photo"><IconButton size="small" onClick={() => { setStudentPhotoForm({ avatar: student.avatar || '' }); open('studentPhoto', 'edit', student); }}><Edit sx={{ fontSize: 16, color: '#64748b' }} /></IconButton></Tooltip>} />)}</div></Section><Section title="Teacher Registry" subtitle="Maintain the teacher registry alongside accounts, including teacher photos."><div className="space-y-3">{teachers.map((teacher) => <Row key={teacher._id} title={teacher.name} meta={`${teacher.facultyId} | ${teacher.email} | ${teacher.department}`} chips={[teacher.status, teacher.designation]} avatar={teacher.avatar} />)}</div></Section></div>}
+
+              {tab === 2 && <div className="grid grid-cols-1 xl:grid-cols-2 gap-5"><Section title="Courses" subtitle="Keep existing course operations inside academics." action={<Button variant="outlined" size="small" startIcon={<Add />} onClick={() => { setCourseForm(emptyCourse); open('course'); }}>Add Course</Button>}><div className="space-y-3">{courses.map((course) => <Row key={course._id} title={course.name} meta={`${course.code} | ${course.department} | Semester ${course.semester}`} chips={[`${course.credits} credits`, `Capacity ${course.capacity}`, course.status]} actions={<><Tooltip title="Edit"><IconButton size="small" onClick={() => { setCourseForm({ name: course.name, code: course.code, department: course.department, semester: course.semester, credits: course.credits, capacity: course.capacity, status: course.status }); open('course', 'edit', course); }}><Edit sx={{ fontSize: 16, color: '#64748b' }} /></IconButton></Tooltip><Tooltip title="Delete"><IconButton size="small" onClick={() => remove(`/academics/courses/${course._id}`, 'Delete this course?')}><Delete sx={{ fontSize: 16, color: '#ef4444' }} /></IconButton></Tooltip></>} />)}</div></Section><Section title="Exam Schedule" subtitle="Schedule and maintain exam entries." action={<Button variant="outlined" size="small" startIcon={<Add />} onClick={() => { setExamForm(emptyExam); open('exam'); }}>Schedule Exam</Button>}><div className="space-y-3">{exams.map((exam) => <Row key={exam._id} title={exam.course?.name || 'Unknown Course'} meta={`${new Date(exam.date).toLocaleDateString('en-IN')} | ${exam.startTime} - ${exam.endTime} | ${exam.venue}`} chips={[exam.examType, exam.status]} actions={<Tooltip title="Delete"><IconButton size="small" onClick={() => remove(`/academics/exams/${exam._id}`, 'Delete this exam schedule?')}><Delete sx={{ fontSize: 16, color: '#ef4444' }} /></IconButton></Tooltip>} />)}</div></Section></div>}
+
+              {tab === 3 && <Section title="Curriculum Plans" subtitle="Create and manage curriculum plans." action={<Button variant="contained" size="small" startIcon={<Add />} onClick={() => { setCurriculumForm(emptyCurriculum); open('curriculum'); }}>New Plan</Button>}><div className="space-y-3">{curriculumPlans.map((plan) => <Row key={plan._id} title={plan.title} meta={`${plan.program} | ${plan.department} | ${plan.academicYear} | Semester ${plan.semester}`} chips={[plan.status, `${plan.coursesCount || 0} courses`, plan.reviewCycle || 'No review cycle']} actions={<><Tooltip title="Edit"><IconButton size="small" onClick={() => { setCurriculumForm({ title: plan.title, program: plan.program, department: plan.department, academicYear: plan.academicYear, semester: plan.semester, status: plan.status, coursesCount: plan.coursesCount || '', reviewCycle: plan.reviewCycle || '', notes: plan.notes || '', owner: plan.owner?._id || '' }); open('curriculum', 'edit', plan); }}><Edit sx={{ fontSize: 16, color: '#64748b' }} /></IconButton></Tooltip><Tooltip title="Delete"><IconButton size="small" onClick={() => remove(`/academics/curriculum-plans/${plan._id}`, 'Delete this curriculum plan?')}><Delete sx={{ fontSize: 16, color: '#ef4444' }} /></IconButton></Tooltip></>} />)}</div></Section>}
+
+              {tab === 4 && <Section title="Academic Plans and Approvals" subtitle="Manage academic plans, approvals, and records." action={<Button variant="contained" size="small" startIcon={<Add />} onClick={() => { setPlanForm(emptyPlan); open('plan'); }}>Add Plan</Button>}><div className="space-y-3">{academicPlans.map((plan) => <Row key={plan._id} title={plan.title} meta={`${plan.planType} | ${plan.department} | ${plan.academicYear}`} chips={[plan.approvalStatus, plan.recordStatus, plan.approver?.name || 'No approver']} actions={<><Tooltip title="Edit"><IconButton size="small" onClick={() => { setPlanForm({ title: plan.title, department: plan.department, planType: plan.planType, academicYear: plan.academicYear, owner: plan.owner?._id || '', approver: plan.approver?._id || '', approvalStatus: plan.approvalStatus, recordStatus: plan.recordStatus, effectiveDate: plan.effectiveDate ? plan.effectiveDate.slice(0, 10) : '', notes: plan.notes || '' }); open('plan', 'edit', plan); }}><Edit sx={{ fontSize: 16, color: '#64748b' }} /></IconButton></Tooltip><Tooltip title="Delete"><IconButton size="small" onClick={() => remove(`/academics/academic-plans/${plan._id}`, 'Delete this academic plan?')}><Delete sx={{ fontSize: 16, color: '#ef4444' }} /></IconButton></Tooltip></>} />)}</div></Section>}
+
+              {tab === 5 && <Section title="Leave Requests" subtitle="Monitor leave requests and keep review notes current." action={<Button variant="contained" size="small" startIcon={<Add />} onClick={() => { setLeaveForm(emptyLeave); open('leave'); }}>Add Request</Button>}><div className="space-y-3">{leaveRequests.map((item) => <Row key={item._id} title={item.teacher?.name || 'Teacher'} meta={`${item.leaveType} | ${new Date(item.startDate).toLocaleDateString('en-IN')} to ${new Date(item.endDate).toLocaleDateString('en-IN')} | ${item.days} day(s)`} chips={[item.status, item.teacher?.department || 'No department']} actions={<><Tooltip title="Edit"><IconButton size="small" onClick={() => { setLeaveForm({ teacher: item.teacher?._id || '', leaveType: item.leaveType, startDate: item.startDate ? item.startDate.slice(0, 10) : '', endDate: item.endDate ? item.endDate.slice(0, 10) : '', days: item.days || '', reason: item.reason || '', status: item.status, reviewNotes: item.reviewNotes || '' }); open('leave', 'edit', item); }}><Edit sx={{ fontSize: 16, color: '#64748b' }} /></IconButton></Tooltip><Tooltip title="Delete"><IconButton size="small" onClick={() => remove(`/academics/leave-requests/${item._id}`, 'Delete this leave request?')}><Delete sx={{ fontSize: 16, color: '#ef4444' }} /></IconButton></Tooltip></>} />)}</div></Section>}
             </div>
           )}
         </div>
       </div>
+      <FormDialog open={dialog.open && dialog.type === 'teacher'} onClose={closeDialog} title={dialog.mode === 'add' ? 'Add Teacher Account' : 'Edit Teacher Account'} subtitle="Maintain teacher accounts from academics." error={error} onPrimary={() => saveAndRefresh(() => dialog.mode === 'add' ? api.post('/academics/teacher-accounts', { ...teacherForm, subjects: teacherForm.subjects.split(',').map((item) => item.trim()).filter(Boolean), experienceYears: Number(teacherForm.experienceYears) || 0 }) : api.put(`/academics/teacher-accounts/${dialog.data._id}`, { ...teacherForm, subjects: teacherForm.subjects.split(',').map((item) => item.trim()).filter(Boolean), experienceYears: Number(teacherForm.experienceYears) || 0 }))} primaryDisabled={saving || !teacherForm.name || !teacherForm.email || !teacherForm.facultyId} primaryLabel={dialog.mode === 'add' ? 'Create Account' : 'Save Account'} loading={saving}><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><TextField label="Full Name" value={teacherForm.name} onChange={(e) => setTeacherForm({ ...teacherForm, name: e.target.value })} size="small" fullWidth required /><TextField label="Faculty ID" value={teacherForm.facultyId} onChange={(e) => setTeacherForm({ ...teacherForm, facultyId: e.target.value })} size="small" fullWidth required /><TextField label="Email" value={teacherForm.email} onChange={(e) => setTeacherForm({ ...teacherForm, email: e.target.value })} size="small" fullWidth required /><TextField label="Phone" value={teacherForm.phone} onChange={(e) => setTeacherForm({ ...teacherForm, phone: e.target.value })} size="small" fullWidth /><FormControl size="small" fullWidth><InputLabel>Department</InputLabel><Select value={teacherForm.department} label="Department" onChange={(e) => setTeacherForm({ ...teacherForm, department: e.target.value })}>{DEPARTMENTS.map((department) => <MenuItem key={department} value={department}>{department}</MenuItem>)}</Select></FormControl><FormControl size="small" fullWidth><InputLabel>Designation</InputLabel><Select value={teacherForm.designation} label="Designation" onChange={(e) => setTeacherForm({ ...teacherForm, designation: e.target.value })}>{FACULTY_DESIGNATIONS.map((designation) => <MenuItem key={designation} value={designation}>{designation}</MenuItem>)}</Select></FormControl><TextField label="Photo URL" value={teacherForm.avatar} onChange={(e) => setTeacherForm({ ...teacherForm, avatar: e.target.value })} size="small" fullWidth sx={{ gridColumn: { sm: 'span 2' } }} /><TextField label="Subjects (comma separated)" value={teacherForm.subjects} onChange={(e) => setTeacherForm({ ...teacherForm, subjects: e.target.value })} size="small" fullWidth sx={{ gridColumn: { sm: 'span 2' } }} /><TextField label="Experience (years)" value={teacherForm.experienceYears} onChange={(e) => setTeacherForm({ ...teacherForm, experienceYears: e.target.value })} size="small" fullWidth type="number" /><FormControl size="small" fullWidth><InputLabel>Status</InputLabel><Select value={teacherForm.status} label="Status" onChange={(e) => setTeacherForm({ ...teacherForm, status: e.target.value })}>{teacherStatuses.map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}</Select></FormControl><FormControl size="small" fullWidth sx={{ gridColumn: { sm: 'span 2' } }}><InputLabel>Account Status</InputLabel><Select value={teacherForm.accountStatus} label="Account Status" onChange={(e) => setTeacherForm({ ...teacherForm, accountStatus: e.target.value })}>{accountStatuses.map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}</Select></FormControl></div></FormDialog>
 
-      {/* Course Dialog */}
-      <FormDialog
-        open={dialog.open && dialog.type === 'course'}
-        onClose={closeDialog}
-        title={dialog.mode === 'add' ? 'Add Course' : 'Edit Course'}
-        subtitle="Define the academic structure with course code, department, semester, and capacity."
-        error={error}
-        onPrimary={handleSaveCourse}
-        primaryDisabled={saving || !courseForm.name || !courseForm.code}
-        primaryLabel={dialog.mode === 'add' ? 'Add Course' : 'Save Course'}
-        loading={saving}
-      >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <TextField label="Course Name" value={courseForm.name} onChange={(e) => setCourseForm({ ...courseForm, name: e.target.value })} size="small" fullWidth required sx={{ gridColumn: 'span 2' }} />
-            <TextField label="Course Code" value={courseForm.code} onChange={(e) => setCourseForm({ ...courseForm, code: e.target.value })} size="small" fullWidth required />
-            <FormControl size="small" fullWidth>
-              <InputLabel>Department</InputLabel>
-              <Select value={courseForm.department} label="Department" onChange={(e) => setCourseForm({ ...courseForm, department: e.target.value })}>
-                {DEPARTMENTS.map((d) => <MenuItem key={d} value={d}>{d}</MenuItem>)}
-              </Select>
-            </FormControl>
-            <TextField label="Semester" value={courseForm.semester} onChange={(e) => setCourseForm({ ...courseForm, semester: e.target.value })} size="small" fullWidth />
-            <TextField label="Credits" value={courseForm.credits} onChange={(e) => setCourseForm({ ...courseForm, credits: e.target.value })} size="small" fullWidth type="number" />
-            <TextField label="Capacity" value={courseForm.capacity} onChange={(e) => setCourseForm({ ...courseForm, capacity: e.target.value })} size="small" fullWidth type="number" />
-          </div>
-      </FormDialog>
+      <FormDialog open={dialog.open && dialog.type === 'course'} onClose={closeDialog} title={dialog.mode === 'add' ? 'Add Course' : 'Edit Course'} subtitle="Maintain the course list already present in academics." error={error} onPrimary={() => saveAndRefresh(() => dialog.mode === 'add' ? api.post('/academics/courses', { ...courseForm, credits: Number(courseForm.credits), capacity: Number(courseForm.capacity) }) : api.put(`/academics/courses/${dialog.data._id}`, { ...courseForm, credits: Number(courseForm.credits), capacity: Number(courseForm.capacity) }))} primaryDisabled={saving || !courseForm.name || !courseForm.code} primaryLabel={dialog.mode === 'add' ? 'Add Course' : 'Save Course'} loading={saving}><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><TextField label="Course Name" value={courseForm.name} onChange={(e) => setCourseForm({ ...courseForm, name: e.target.value })} size="small" fullWidth sx={{ gridColumn: { sm: 'span 2' } }} /><TextField label="Course Code" value={courseForm.code} onChange={(e) => setCourseForm({ ...courseForm, code: e.target.value })} size="small" fullWidth /><FormControl size="small" fullWidth><InputLabel>Department</InputLabel><Select value={courseForm.department} label="Department" onChange={(e) => setCourseForm({ ...courseForm, department: e.target.value })}>{DEPARTMENTS.map((department) => <MenuItem key={department} value={department}>{department}</MenuItem>)}</Select></FormControl><TextField label="Semester" value={courseForm.semester} onChange={(e) => setCourseForm({ ...courseForm, semester: e.target.value })} size="small" fullWidth /><TextField label="Credits" value={courseForm.credits} onChange={(e) => setCourseForm({ ...courseForm, credits: e.target.value })} size="small" fullWidth type="number" /><TextField label="Capacity" value={courseForm.capacity} onChange={(e) => setCourseForm({ ...courseForm, capacity: e.target.value })} size="small" fullWidth type="number" /></div></FormDialog>
 
-      <FormDialog
-        open={dialog.open && dialog.type === 'exam'}
-        onClose={closeDialog}
-        title="Schedule Exam"
-        subtitle="Plan the exam window with course, type, date, venue, and marks configuration."
-        error={error}
-        onPrimary={handleSaveExam}
-        primaryDisabled={saving || !examForm.course || !examForm.date || !examForm.startTime || !examForm.endTime || !examForm.venue}
-        primaryLabel="Schedule Exam"
-        loading={saving}
-      >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <FormControl size="small" fullWidth sx={{ gridColumn: 'span 2' }}>
-              <InputLabel>Course</InputLabel>
-              <Select value={examForm.course} label="Course" onChange={(e) => setExamForm({ ...examForm, course: e.target.value })}>
-                {courses.map((c) => <MenuItem key={c._id} value={c._id}>{c.name} ({c.code})</MenuItem>)}
-              </Select>
-            </FormControl>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Exam Type</InputLabel>
-              <Select value={examForm.examType} label="Exam Type" onChange={(e) => setExamForm({ ...examForm, examType: e.target.value })}>
-                {EXAM_TYPES.map((t) => <MenuItem key={t} value={t}>{t}</MenuItem>)}
-              </Select>
-            </FormControl>
-            <TextField label="Date" value={examForm.date} onChange={(e) => setExamForm({ ...examForm, date: e.target.value })} size="small" fullWidth type="date" InputLabelProps={{ shrink: true }} />
-            <TextField label="Start Time" value={examForm.startTime} onChange={(e) => setExamForm({ ...examForm, startTime: e.target.value })} size="small" fullWidth />
-            <TextField label="End Time" value={examForm.endTime} onChange={(e) => setExamForm({ ...examForm, endTime: e.target.value })} size="small" fullWidth />
-            <TextField label="Venue" value={examForm.venue} onChange={(e) => setExamForm({ ...examForm, venue: e.target.value })} size="small" fullWidth sx={{ gridColumn: 'span 2' }} />
-            <TextField label="Max Marks" value={examForm.maxMarks} onChange={(e) => setExamForm({ ...examForm, maxMarks: e.target.value })} size="small" fullWidth type="number" />
-          </div>
-      </FormDialog>
+      <FormDialog open={dialog.open && dialog.type === 'exam'} onClose={closeDialog} title="Schedule Exam" subtitle="Add exam schedule entries." error={error} onPrimary={() => saveAndRefresh(() => api.post('/academics/exams', { ...examForm, maxMarks: examForm.maxMarks ? Number(examForm.maxMarks) : undefined }))} primaryDisabled={saving || !examForm.course || !examForm.date || !examForm.startTime || !examForm.endTime || !examForm.venue} primaryLabel="Schedule Exam" loading={saving}><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><FormControl size="small" fullWidth sx={{ gridColumn: { sm: 'span 2' } }}><InputLabel>Course</InputLabel><Select value={examForm.course} label="Course" onChange={(e) => setExamForm({ ...examForm, course: e.target.value })}>{courses.map((course) => <MenuItem key={course._id} value={course._id}>{course.name} ({course.code})</MenuItem>)}</Select></FormControl><FormControl size="small" fullWidth><InputLabel>Exam Type</InputLabel><Select value={examForm.examType} label="Exam Type" onChange={(e) => setExamForm({ ...examForm, examType: e.target.value })}>{examTypes.map((type) => <MenuItem key={type} value={type}>{type}</MenuItem>)}</Select></FormControl><TextField label="Date" value={examForm.date} onChange={(e) => setExamForm({ ...examForm, date: e.target.value })} size="small" fullWidth type="date" InputLabelProps={{ shrink: true }} /><TextField label="Start Time" value={examForm.startTime} onChange={(e) => setExamForm({ ...examForm, startTime: e.target.value })} size="small" fullWidth /><TextField label="End Time" value={examForm.endTime} onChange={(e) => setExamForm({ ...examForm, endTime: e.target.value })} size="small" fullWidth /><TextField label="Venue" value={examForm.venue} onChange={(e) => setExamForm({ ...examForm, venue: e.target.value })} size="small" fullWidth sx={{ gridColumn: { sm: 'span 2' } }} /><TextField label="Max Marks" value={examForm.maxMarks} onChange={(e) => setExamForm({ ...examForm, maxMarks: e.target.value })} size="small" fullWidth type="number" /></div></FormDialog>
+
+      <FormDialog open={dialog.open && dialog.type === 'curriculum'} onClose={closeDialog} title={dialog.mode === 'add' ? 'Create Curriculum Plan' : 'Edit Curriculum Plan'} subtitle="Create and manage curriculum plans." error={error} onPrimary={() => saveAndRefresh(() => dialog.mode === 'add' ? api.post('/academics/curriculum-plans', { ...curriculumForm, coursesCount: Number(curriculumForm.coursesCount) || 0 }) : api.put(`/academics/curriculum-plans/${dialog.data._id}`, { ...curriculumForm, coursesCount: Number(curriculumForm.coursesCount) || 0 }))} primaryDisabled={saving || !curriculumForm.title || !curriculumForm.program || !curriculumForm.academicYear} primaryLabel={dialog.mode === 'add' ? 'Create Plan' : 'Save Plan'} loading={saving}><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><TextField label="Title" value={curriculumForm.title} onChange={(e) => setCurriculumForm({ ...curriculumForm, title: e.target.value })} size="small" fullWidth sx={{ gridColumn: { sm: 'span 2' } }} /><TextField label="Program" value={curriculumForm.program} onChange={(e) => setCurriculumForm({ ...curriculumForm, program: e.target.value })} size="small" fullWidth /><FormControl size="small" fullWidth><InputLabel>Department</InputLabel><Select value={curriculumForm.department} label="Department" onChange={(e) => setCurriculumForm({ ...curriculumForm, department: e.target.value })}>{DEPARTMENTS.map((department) => <MenuItem key={department} value={department}>{department}</MenuItem>)}</Select></FormControl><TextField label="Academic Year" value={curriculumForm.academicYear} onChange={(e) => setCurriculumForm({ ...curriculumForm, academicYear: e.target.value })} size="small" fullWidth /><TextField label="Semester" value={curriculumForm.semester} onChange={(e) => setCurriculumForm({ ...curriculumForm, semester: e.target.value })} size="small" fullWidth /><FormControl size="small" fullWidth><InputLabel>Status</InputLabel><Select value={curriculumForm.status} label="Status" onChange={(e) => setCurriculumForm({ ...curriculumForm, status: e.target.value })}>{curriculumStatuses.map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}</Select></FormControl><TextField label="Courses Count" value={curriculumForm.coursesCount} onChange={(e) => setCurriculumForm({ ...curriculumForm, coursesCount: e.target.value })} size="small" fullWidth type="number" /><TextField label="Review Cycle" value={curriculumForm.reviewCycle} onChange={(e) => setCurriculumForm({ ...curriculumForm, reviewCycle: e.target.value })} size="small" fullWidth /><FormControl size="small" fullWidth><InputLabel>Owner</InputLabel><Select value={curriculumForm.owner} label="Owner" onChange={(e) => setCurriculumForm({ ...curriculumForm, owner: e.target.value })}><MenuItem value="">Unassigned</MenuItem>{accountOptions}</Select></FormControl><TextField label="Notes" value={curriculumForm.notes} onChange={(e) => setCurriculumForm({ ...curriculumForm, notes: e.target.value })} size="small" fullWidth multiline minRows={3} sx={{ gridColumn: { sm: 'span 2' } }} /></div></FormDialog>
+      <FormDialog open={dialog.open && dialog.type === 'studentPhoto'} onClose={closeDialog} title="Update Student Photo" subtitle="Attach a photo URL for the selected student from the academics registry." error={error} onPrimary={() => saveAndRefresh(() => api.put(`/academics/registries/students/${dialog.data._id}`, { avatar: studentPhotoForm.avatar }))} primaryDisabled={saving} primaryLabel="Save Photo" loading={saving}><div className="grid grid-cols-1 gap-3"><TextField label="Student" value={dialog.data?.name || ''} size="small" fullWidth disabled /><TextField label="Photo URL" value={studentPhotoForm.avatar} onChange={(e) => setStudentPhotoForm({ avatar: e.target.value })} size="small" fullWidth /><div className="flex justify-center pt-2"><Avatar src={studentPhotoForm.avatar || ''} sx={{ width: 72, height: 72, bgcolor: stringToColor(dialog.data?.name || 'S') }}>{getInitials(dialog.data?.name || 'S')}</Avatar></div></div></FormDialog>
+      <FormDialog open={dialog.open && dialog.type === 'plan'} onClose={closeDialog} title={dialog.mode === 'add' ? 'Add Academic Plan' : 'Edit Academic Plan'} subtitle="Manage academic plans, approvals, and records." error={error} onPrimary={() => saveAndRefresh(() => dialog.mode === 'add' ? api.post('/academics/academic-plans', planForm) : api.put(`/academics/academic-plans/${dialog.data._id}`, planForm))} primaryDisabled={saving || !planForm.title || !planForm.department || !planForm.academicYear} primaryLabel={dialog.mode === 'add' ? 'Add Plan' : 'Save Plan'} loading={saving}><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><TextField label="Title" value={planForm.title} onChange={(e) => setPlanForm({ ...planForm, title: e.target.value })} size="small" fullWidth sx={{ gridColumn: { sm: 'span 2' } }} /><FormControl size="small" fullWidth><InputLabel>Department</InputLabel><Select value={planForm.department} label="Department" onChange={(e) => setPlanForm({ ...planForm, department: e.target.value })}>{DEPARTMENTS.map((department) => <MenuItem key={department} value={department}>{department}</MenuItem>)}</Select></FormControl><FormControl size="small" fullWidth><InputLabel>Plan Type</InputLabel><Select value={planForm.planType} label="Plan Type" onChange={(e) => setPlanForm({ ...planForm, planType: e.target.value })}>{planTypes.map((type) => <MenuItem key={type} value={type}>{type}</MenuItem>)}</Select></FormControl><TextField label="Academic Year" value={planForm.academicYear} onChange={(e) => setPlanForm({ ...planForm, academicYear: e.target.value })} size="small" fullWidth /><TextField label="Effective Date" value={planForm.effectiveDate} onChange={(e) => setPlanForm({ ...planForm, effectiveDate: e.target.value })} size="small" fullWidth type="date" InputLabelProps={{ shrink: true }} /><FormControl size="small" fullWidth><InputLabel>Owner</InputLabel><Select value={planForm.owner} label="Owner" onChange={(e) => setPlanForm({ ...planForm, owner: e.target.value })}><MenuItem value="">Unassigned</MenuItem>{accountOptions}</Select></FormControl><FormControl size="small" fullWidth><InputLabel>Approver</InputLabel><Select value={planForm.approver} label="Approver" onChange={(e) => setPlanForm({ ...planForm, approver: e.target.value })}><MenuItem value="">Unassigned</MenuItem>{accountOptions}</Select></FormControl><FormControl size="small" fullWidth><InputLabel>Approval Status</InputLabel><Select value={planForm.approvalStatus} label="Approval Status" onChange={(e) => setPlanForm({ ...planForm, approvalStatus: e.target.value })}>{approvalStatuses.map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}</Select></FormControl><FormControl size="small" fullWidth><InputLabel>Record Status</InputLabel><Select value={planForm.recordStatus} label="Record Status" onChange={(e) => setPlanForm({ ...planForm, recordStatus: e.target.value })}>{recordStatuses.map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}</Select></FormControl><TextField label="Notes" value={planForm.notes} onChange={(e) => setPlanForm({ ...planForm, notes: e.target.value })} size="small" fullWidth multiline minRows={3} sx={{ gridColumn: { sm: 'span 2' } }} /></div></FormDialog>
+
+      <FormDialog open={dialog.open && dialog.type === 'leave'} onClose={closeDialog} title={dialog.mode === 'add' ? 'Add Leave Request' : 'Edit Leave Request'} subtitle="Monitor leave requests." error={error} onPrimary={() => saveAndRefresh(() => dialog.mode === 'add' ? api.post('/academics/leave-requests', { ...leaveForm, days: Number(leaveForm.days) || 1 }) : api.put(`/academics/leave-requests/${dialog.data._id}`, { ...leaveForm, days: Number(leaveForm.days) || 1 }))} primaryDisabled={saving || !leaveForm.teacher || !leaveForm.startDate || !leaveForm.endDate} primaryLabel={dialog.mode === 'add' ? 'Add Request' : 'Save Request'} loading={saving}><div className="grid grid-cols-1 sm:grid-cols-2 gap-3"><FormControl size="small" fullWidth sx={{ gridColumn: { sm: 'span 2' } }}><InputLabel>Teacher</InputLabel><Select value={leaveForm.teacher} label="Teacher" onChange={(e) => setLeaveForm({ ...leaveForm, teacher: e.target.value })}>{accountOptions}</Select></FormControl><FormControl size="small" fullWidth><InputLabel>Leave Type</InputLabel><Select value={leaveForm.leaveType} label="Leave Type" onChange={(e) => setLeaveForm({ ...leaveForm, leaveType: e.target.value })}>{leaveTypes.map((type) => <MenuItem key={type} value={type}>{type}</MenuItem>)}</Select></FormControl><FormControl size="small" fullWidth><InputLabel>Status</InputLabel><Select value={leaveForm.status} label="Status" onChange={(e) => setLeaveForm({ ...leaveForm, status: e.target.value })}>{leaveStatuses.map((status) => <MenuItem key={status} value={status}>{status}</MenuItem>)}</Select></FormControl><TextField label="Start Date" value={leaveForm.startDate} onChange={(e) => setLeaveForm({ ...leaveForm, startDate: e.target.value })} size="small" fullWidth type="date" InputLabelProps={{ shrink: true }} /><TextField label="End Date" value={leaveForm.endDate} onChange={(e) => setLeaveForm({ ...leaveForm, endDate: e.target.value })} size="small" fullWidth type="date" InputLabelProps={{ shrink: true }} /><TextField label="Days" value={leaveForm.days} onChange={(e) => setLeaveForm({ ...leaveForm, days: e.target.value })} size="small" fullWidth type="number" /><TextField label="Reason" value={leaveForm.reason} onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })} size="small" fullWidth /><TextField label="Review Notes" value={leaveForm.reviewNotes} onChange={(e) => setLeaveForm({ ...leaveForm, reviewNotes: e.target.value })} size="small" fullWidth multiline minRows={3} sx={{ gridColumn: { sm: 'span 2' } }} /></div></FormDialog>
     </div>
   );
 }

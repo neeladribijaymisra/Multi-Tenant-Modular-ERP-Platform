@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button, TextField, Switch, Divider, Avatar, CircularProgress, Alert } from '@mui/material';
 import { Person, Lock, Notifications, Palette, School, Save, Security } from '@mui/icons-material';
 import api from '../utils/api';
@@ -10,6 +10,7 @@ const sections = [
   { id: 'profile', label: 'Profile', icon: Person },
   { id: 'security', label: 'Security', icon: Lock },
   { id: 'admins', label: 'Manage Admins', icon: Security },
+  { id: 'portalAccess', label: 'Portal Access', icon: Security },
   { id: 'notifications', label: 'Notifications', icon: Notifications },
   { id: 'university', label: 'University Info', icon: School },
   { id: 'appearance', label: 'Appearance', icon: Palette },
@@ -21,6 +22,7 @@ export default function SettingsPage() {
   const [profileForm, setProfileForm] = useState({ name: user?.name || '', email: user?.email || '', phone: user?.phone || '', department: user?.department || '' });
   const [passwordForm, setPasswordForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
   const [notifications, setNotifications] = useState({ email: true, sms: false, feeAlerts: true, examAlerts: true, admissions: true, system: false });
+  const [portalAccess, setPortalAccess] = useState({ accounts: false, hr: false, academics: false, masterAdmin: true });
   const [saving, setSaving] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
@@ -49,6 +51,29 @@ export default function SettingsPage() {
       setError(err.response?.data?.message || 'Failed to update password.');
     } finally { setSaving(false); }
   };
+
+  const handlePortalAccessSave = async () => {
+    setSaving(true); setError(''); setSuccess('');
+    try {
+      const { data } = await api.put('/auth/portal-settings', { portalAccess });
+      setPortalAccess(data.data.portalAccess);
+      setSuccess('Portal access settings updated successfully.');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to update portal access.');
+    } finally { setSaving(false); }
+  };
+
+  useEffect(() => {
+    const loadPortalAccess = async () => {
+      try {
+        const { data } = await api.get('/auth/portal-settings');
+        setPortalAccess(data.data.portalAccess);
+      } catch {
+        /* silent */
+      }
+    };
+    loadPortalAccess();
+  }, []);
 
   const clearMessages = () => { setError(''); setSuccess(''); };
 
@@ -163,6 +188,48 @@ export default function SettingsPage() {
                 <h2 className="font-heading font-600 text-slate-900 text-lg">Manage Admins</h2>
                 <Alert severity="warning">
                   Only the Master Admin can add or manage administrator accounts.
+                </Alert>
+              </div>
+            )
+          )}
+
+          {active === 'portalAccess' && (
+            user?.role === 'superadmin' ? (
+              <div className="space-y-5">
+                <h2 className="font-heading font-600 text-slate-900 text-lg">Portal Access</h2>
+                <div className="p-4 rounded-xl bg-slate-50 border border-slate-200">
+                  <p className="text-sm font-semibold text-slate-800">Control which login portals are available</p>
+                  <p className="text-xs text-slate-500 mt-1">Master Admin stays on at all times. Accounts, HR, and Academics can be turned on or off from here.</p>
+                </div>
+                <div className="space-y-2">
+                  {[
+                    { key: 'accounts', label: 'Accounts Portal', desc: 'Allow Accounts users to enter from the login screen.' },
+                    { key: 'hr', label: 'HR Portal', desc: 'Allow HR users to enter from the login screen.' },
+                    { key: 'academics', label: 'Academics Portal', desc: 'Allow Academics users to enter from the login screen.' },
+                    { key: 'masterAdmin', label: 'Master Admin Portal', desc: 'Always enabled for system ownership.', locked: true },
+                  ].map((item) => (
+                    <div key={item.key} className="flex items-center justify-between py-3 border-b border-slate-100">
+                      <div>
+                        <p className="text-sm font-semibold text-slate-800">{item.label}</p>
+                        <p className="text-xs text-slate-400 mt-0.5">{item.desc}</p>
+                      </div>
+                      <Switch
+                        checked={portalAccess[item.key]}
+                        disabled={item.locked}
+                        onChange={(e) => setPortalAccess((prev) => ({ ...prev, [item.key]: e.target.checked }))}
+                      />
+                    </div>
+                  ))}
+                </div>
+                <Button variant="contained" startIcon={saving ? <CircularProgress size={16} color="inherit" /> : <Save />} onClick={handlePortalAccessSave} disabled={saving}>
+                  Save Portal Access
+                </Button>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                <h2 className="font-heading font-600 text-slate-900 text-lg">Portal Access</h2>
+                <Alert severity="warning">
+                  Only the Master Admin can change login portal availability.
                 </Alert>
               </div>
             )

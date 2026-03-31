@@ -10,9 +10,9 @@ export function AuthProvider({ children }) {
   });
   const [loginError, setLoginError] = useState('');
 
-  const login = async (username, password, expectedRole = null) => {
+  const login = async (username, password, expectedRole = null, portal = 'masterAdmin') => {
     try {
-      const { data } = await api.post('/auth/login', { username, password });
+      const { data } = await api.post('/auth/login', { username, password, portal });
       const { accessToken, refreshToken, admin } = data.data;
 
       if (expectedRole && admin.role !== expectedRole) {
