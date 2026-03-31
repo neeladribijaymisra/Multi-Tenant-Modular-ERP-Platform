@@ -3,15 +3,15 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   palette: {
     primary: {
-      main: '#4f46e5',
-      light: '#818cf8',
-      dark: '#3730a3',
+      main: '#2563eb',
+      light: '#60a5fa',
+      dark: '#1d4ed8',
       contrastText: '#ffffff',
     },
     secondary: {
-      main: '#06b6d4',
-      light: '#67e8f9',
-      dark: '#0e7490',
+      main: '#0f766e',
+      light: '#14b8a6',
+      dark: '#115e59',
     },
     success: {
       main: '#10b981',
@@ -29,7 +29,7 @@ const theme = createTheme({
       dark: '#7f1d1d',
     },
     background: {
-      default: '#f8fafc',
+      default: '#eef2f7',
       paper: '#ffffff',
     },
     text: {
@@ -38,35 +38,35 @@ const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"DM Sans", sans-serif',
-    h1: { fontFamily: '"Sora", sans-serif', fontWeight: 700 },
-    h2: { fontFamily: '"Sora", sans-serif', fontWeight: 700 },
-    h3: { fontFamily: '"Sora", sans-serif', fontWeight: 600 },
-    h4: { fontFamily: '"Sora", sans-serif', fontWeight: 600 },
-    h5: { fontFamily: '"Sora", sans-serif', fontWeight: 600 },
-    h6: { fontFamily: '"Sora", sans-serif', fontWeight: 600 },
-    button: { fontFamily: '"DM Sans", sans-serif', fontWeight: 600, textTransform: 'none' },
+    fontFamily: '"Inter", sans-serif',
+    h1: { fontFamily: '"Manrope", sans-serif', fontWeight: 800 },
+    h2: { fontFamily: '"Manrope", sans-serif', fontWeight: 800 },
+    h3: { fontFamily: '"Manrope", sans-serif', fontWeight: 800 },
+    h4: { fontFamily: '"Manrope", sans-serif', fontWeight: 700 },
+    h5: { fontFamily: '"Manrope", sans-serif', fontWeight: 700 },
+    h6: { fontFamily: '"Manrope", sans-serif', fontWeight: 700 },
+    button: { fontFamily: '"Inter", sans-serif', fontWeight: 700, textTransform: 'none' },
   },
   shape: {
-    borderRadius: 12,
+    borderRadius: 18,
   },
   components: {
     MuiButton: {
       styleOverrides: {
         root: {
           borderRadius: '10px',
-          padding: '8px 20px',
+          padding: '10px 20px',
           boxShadow: 'none',
-          '&:hover': { boxShadow: '0 4px 12px rgba(79,70,229,0.25)' },
+          '&:hover': { boxShadow: '0 10px 25px rgba(15,23,42,0.12)' },
         },
       },
     },
     MuiCard: {
       styleOverrides: {
         root: {
-          borderRadius: '16px',
-          boxShadow: '0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04)',
-          border: '1px solid rgba(0,0,0,0.05)',
+          borderRadius: '28px',
+          boxShadow: '0 20px 45px rgba(15,23,42,0.08)',
+          border: '1px solid rgba(226,232,240,0.9)',
         },
       },
     },
@@ -74,14 +74,14 @@ const theme = createTheme({
       styleOverrides: {
         root: {
           '& .MuiOutlinedInput-root': {
-            borderRadius: '10px',
+            borderRadius: '18px',
           },
         },
       },
     },
     MuiChip: {
       styleOverrides: {
-        root: { borderRadius: '8px', fontWeight: 500 },
+        root: { borderRadius: '999px', fontWeight: 700 },
       },
     },
     MuiTableHead: {
@@ -89,11 +89,11 @@ const theme = createTheme({
         root: {
           '& .MuiTableCell-head': {
             backgroundColor: '#f8fafc',
-            fontWeight: 600,
-            color: '#475569',
-            fontFamily: '"Sora", sans-serif',
+            fontWeight: 800,
+            color: '#94a3b8',
+            fontFamily: '"Inter", sans-serif',
             fontSize: '0.8rem',
-            letterSpacing: '0.025em',
+            letterSpacing: '0.18em',
             textTransform: 'uppercase',
           },
         },

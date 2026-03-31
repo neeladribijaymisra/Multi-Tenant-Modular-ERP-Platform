@@ -4,12 +4,12 @@ import { useAuth } from '../../context/AuthContext';
 import api from '../../utils/api';
 import {
   Avatar, Badge, Tooltip, Menu, MenuItem, Divider, IconButton,
-  Drawer, useMediaQuery, useTheme, ClickAwayListener, CircularProgress,
+  Drawer, ClickAwayListener, CircularProgress,
 } from '@mui/material';
 import {
   Dashboard, People, School, MenuBook, AccountBalance,
   Forum, Settings, Notifications, Search, Menu as MenuIcon,
-  Logout, Person, ChevronRight, Close, KeyboardArrowDown, AdminPanelSettings,
+  Logout, Person, ChevronRight, Close, KeyboardArrowDown, AdminPanelSettings, HelpOutline,
 } from '@mui/icons-material';
 
 const baseNavItems = [
@@ -38,15 +38,16 @@ function SidebarContent({ onClose, user }) {
   };
 
   return (
-    <div className="flex flex-col h-full bg-white">
-      <div className="flex items-center justify-between px-5 py-5 border-b border-slate-100">
+    <div className="font-finance-body flex flex-col h-full bg-[#f6f7fb] text-slate-900">
+      <div className="flex items-center justify-between px-6 py-6 border-b border-slate-200">
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 bg-primary-600 rounded-xl flex items-center justify-center shadow-md">
+          <div className="w-11 h-11 rounded-2xl bg-slate-900 flex items-center justify-center shadow-card">
             <School sx={{ fontSize: 18, color: 'white' }} />
           </div>
           <div>
-            <p className="font-heading font-700 text-sm text-slate-900 leading-tight">AYRA ERP</p>
-            <p className="text-xs text-slate-400 font-medium">University Portal</p>
+            <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-400">University ERP</p>
+            <p className="font-finance-display text-xl font-extrabold text-slate-950 leading-tight">AYRA ERP</p>
+            <p className="text-xs text-slate-500 font-medium mt-1"></p>
           </div>
         </div>
         {onClose && (
@@ -56,8 +57,8 @@ function SidebarContent({ onClose, user }) {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto px-3 py-4 space-y-1">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest px-4 mb-3">Main Menu</p>
+      <div className="flex-1 overflow-y-auto px-4 py-6 space-y-1">
+        <p className="text-xs font-semibold text-slate-400 uppercase tracking-[0.35em] px-4 mb-3">Navigation</p>
         {navItems.map((item) => {
           const Icon = item.icon;
           const active = location.pathname === item.path;
@@ -75,7 +76,7 @@ function SidebarContent({ onClose, user }) {
         })}
 
         <div className="pt-4">
-          <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest px-4 mb-3">System</p>
+          <p className="text-xs font-semibold text-slate-400 uppercase tracking-[0.35em] px-4 mb-3">System</p>
           {bottomItems.map((item) => {
             const Icon = item.icon;
             const active = location.pathname === item.path;
@@ -93,9 +94,9 @@ function SidebarContent({ onClose, user }) {
         </div>
       </div>
 
-      <div className="px-3 pb-4 border-t border-slate-100 pt-4">
-        <div className="flex items-center gap-3 px-3 py-2.5 rounded-xl bg-slate-50">
-          <Avatar sx={{ width: 34, height: 34, bgcolor: '#4f46e5', fontSize: 14, fontWeight: 700 }}>
+      <div className="px-4 pb-4 border-t border-slate-200 pt-4">
+        <div className="flex items-center gap-3 px-4 py-3.5 rounded-[24px] bg-white border border-slate-200 shadow-sm">
+          <Avatar sx={{ width: 38, height: 38, bgcolor: '#0f172a', fontSize: 14, fontWeight: 700 }}>
             {user?.name?.charAt(0) || 'A'}
           </Avatar>
           <div className="flex-1 min-w-0">
@@ -111,21 +112,28 @@ function SidebarContent({ onClose, user }) {
 export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const muiTheme = useTheme();
+  const location = useLocation();
+  const isFinanceWorkspace = location.pathname.startsWith('/finance');
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [notifAnchor, setNotifAnchor] = useState(null);
+  const [helpAnchor, setHelpAnchor] = useState(null);
   const [searchVal, setSearchVal] = useState('');
   const [searchResults, setSearchResults] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
 
   const notifications = [
-    { id: 1, title: 'Fee submission deadline', desc: 'Semester fee due in 3 days', time: '2h ago', unread: true },
-    { id: 2, title: 'New admission request', desc: '12 new applications pending review', time: '5h ago', unread: true },
-    { id: 3, title: 'Exam schedule updated', desc: 'Mid-term exams updated for CS dept.', time: '1d ago', unread: false },
-    { id: 4, title: 'Faculty meeting', desc: 'Dept. heads meeting on Friday 10am', time: '2d ago', unread: false },
+    { id: 1, title: 'Fee submission deadline', desc: 'Semester fee due in 3 days', time: '2h ago', unread: true, tone: '#d97706' },
+    { id: 2, title: 'New admission request', desc: '12 new applications pending review', time: '5h ago', unread: true, tone: '#2563eb' },
+    { id: 3, title: 'Exam schedule updated', desc: 'Mid-term exams updated for CS dept.', time: '1d ago', unread: false, tone: '#0f766e' },
+    { id: 4, title: 'Faculty meeting', desc: 'Dept. heads meeting on Friday 10am', time: '2d ago', unread: false, tone: '#7c3aed' },
+  ];
+  const helpItems = [
+    'Use the top search to jump directly into students, faculty, courses, announcements, and admins.',
+    'The new theme mirrors the finance workspace across the full ERP for consistent navigation and visual rhythm.',
+    'Profile, settings, and sign out remain available from the avatar menu at the top right.',
   ];
 
   const unreadCount = notifications.filter((n) => n.unread).length;
@@ -230,51 +238,68 @@ export default function AdminLayout() {
     setSearchVal('');
   };
 
+  if (isFinanceWorkspace) {
+    return (
+      <main className="h-screen overflow-hidden bg-slate-100">
+        <Outlet />
+      </main>
+    );
+  }
+
   return (
-    <div className="flex h-screen overflow-hidden bg-slate-50">
-      <aside className="hidden lg:flex w-60 flex-shrink-0 flex-col shadow-sidebar border-r border-slate-100">
-        <SidebarContent user={user} />
+    <div className="font-finance-body flex h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.08),_transparent_32%),linear-gradient(180deg,#eef2ff_0%,#f8fafc_38%,#eef1f5_100%)]">
+      <aside className="hidden lg:flex w-[290px] flex-shrink-0 border-r border-white/60 bg-[#f6f7fb]/95">
+        <div className="fixed flex h-screen w-[290px] flex-col">
+          <SidebarContent user={user} />
+        </div>
       </aside>
 
       <Drawer
         open={mobileOpen}
         onClose={() => setMobileOpen(false)}
-        PaperProps={{ sx: { width: 240, border: 'none' } }}
+        PaperProps={{ sx: { width: 290, border: 'none' } }}
       >
         <SidebarContent onClose={() => setMobileOpen(false)} user={user} />
       </Drawer>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="bg-white border-b border-slate-100 px-4 lg:px-6 h-16 flex items-center gap-4 flex-shrink-0 shadow-sm">
-          <IconButton
-            className="lg:hidden"
-            onClick={() => setMobileOpen(true)}
-            sx={{ display: { lg: 'none' } }}
-          >
-            <MenuIcon />
-          </IconButton>
+        <header className="sticky top-0 z-20 border-b border-white/70 bg-white/85 px-4 py-4 backdrop-blur lg:px-8">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center">
+            <div className="flex items-center gap-3">
+              <IconButton
+                className="lg:hidden"
+                onClick={() => setMobileOpen(true)}
+                sx={{ display: { lg: 'none' } }}
+              >
+                <MenuIcon />
+              </IconButton>
+              <div className="hidden lg:block">
+                <p className="text-xs font-semibold uppercase tracking-[0.35em] text-slate-400">Application</p>
+                <h1 className="font-finance-display text-2xl font-extrabold text-slate-950">University ERP</h1>
+              </div>
+            </div>
 
-          <ClickAwayListener onClickAway={() => setSearchOpen(false)}>
-            <div className="flex-1 max-w-xl relative">
+            <ClickAwayListener onClickAway={() => setSearchOpen(false)}>
+              <div className="flex-1 max-w-3xl relative">
               <div className="relative flex items-center">
-                <Search sx={{ fontSize: 18, color: '#94a3b8', position: 'absolute', left: 10 }} />
+                <Search sx={{ fontSize: 18, color: '#94a3b8', position: 'absolute', left: 14 }} />
                 <input
                   type="text"
                   value={searchVal}
                   onFocus={() => searchResults.length > 0 && setSearchOpen(true)}
                   onChange={(e) => setSearchVal(e.target.value)}
                   placeholder="Global search across students, faculty, courses, announcements, admins..."
-                  className="w-full pl-9 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-300 focus:border-transparent transition-all"
+                  className="w-full rounded-2xl border border-slate-200 bg-slate-50 py-3 pl-11 pr-10 text-sm text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-4 focus:ring-slate-200/70 focus:border-slate-300 transition-all"
                 />
                 {searchLoading && (
-                  <div className="absolute right-3">
+                  <div className="absolute right-4">
                     <CircularProgress size={16} />
                   </div>
                 )}
               </div>
 
               {searchOpen && (
-                <div className="absolute top-[calc(100%+10px)] left-0 right-0 z-30 rounded-2xl border border-slate-200 bg-white shadow-2xl overflow-hidden">
+                <div className="absolute top-[calc(100%+10px)] left-0 right-0 z-30 rounded-[24px] border border-slate-200 bg-white shadow-2xl overflow-hidden">
                   {Object.keys(groupedResults).length === 0 ? (
                     <div className="px-4 py-4 text-sm text-slate-400">
                       {searchVal.trim().length < 2 ? 'Type at least 2 characters to search.' : 'No matching records found.'}
@@ -300,23 +325,48 @@ export default function AdminLayout() {
                   )}
                 </div>
               )}
-            </div>
-          </ClickAwayListener>
+              </div>
+            </ClickAwayListener>
 
-          <div className="flex items-center gap-2 ml-auto">
-            <Tooltip title="Notifications">
-              <IconButton onClick={(e) => setNotifAnchor(e.currentTarget)} size="small">
-                <Badge badgeContent={unreadCount} color="error" max={9}>
+            <div className="flex items-center gap-2 ml-auto self-end lg:self-auto lg:h-11">
+              <Tooltip title="Notifications">
+                <IconButton
+                  onClick={(e) => setNotifAnchor(e.currentTarget)}
+                  size="small"
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    border: '1px solid #e2e8f0',
+                    bgcolor: '#fff',
+                    alignSelf: 'center',
+                  }}
+                >
+                <Badge badgeContent={unreadCount} color="error" max={9} overlap="circular">
                   <Notifications sx={{ fontSize: 20, color: '#64748b' }} />
                 </Badge>
-              </IconButton>
-            </Tooltip>
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Help">
+                <IconButton
+                  onClick={(e) => setHelpAnchor(e.currentTarget)}
+                  size="small"
+                  sx={{
+                    width: 44,
+                    height: 44,
+                    border: '1px solid #e2e8f0',
+                    bgcolor: '#fff',
+                    alignSelf: 'center',
+                  }}
+                >
+                  <HelpOutline sx={{ fontSize: 20, color: '#64748b' }} />
+                </IconButton>
+              </Tooltip>
 
-            <div
-              className="flex items-center gap-2.5 cursor-pointer hover:bg-slate-50 rounded-xl px-2 py-1.5 transition-colors"
-              onClick={(e) => setAnchorEl(e.currentTarget)}
-            >
-              <Avatar sx={{ width: 32, height: 32, bgcolor: '#4f46e5', fontSize: 13, fontWeight: 700 }}>
+              <div
+                className="flex h-11 items-center gap-2.5 cursor-pointer border border-slate-200 bg-white rounded-2xl px-3 py-2 transition-colors hover:border-slate-300 hover:shadow-sm"
+                onClick={(e) => setAnchorEl(e.currentTarget)}
+              >
+              <Avatar sx={{ width: 36, height: 36, bgcolor: '#0f172a', fontSize: 13, fontWeight: 700 }}>
                 {user?.name?.charAt(0) || 'A'}
               </Avatar>
               <div className="hidden sm:block">
@@ -326,9 +376,10 @@ export default function AdminLayout() {
               <KeyboardArrowDown sx={{ fontSize: 16, color: '#94a3b8' }} />
             </div>
           </div>
+          </div>
         </header>
 
-        <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <main className="flex-1 overflow-y-auto px-4 py-5 lg:px-8 lg:py-8">
           <Outlet />
         </main>
       </div>
@@ -337,31 +388,95 @@ export default function AdminLayout() {
         anchorEl={notifAnchor}
         open={Boolean(notifAnchor)}
         onClose={() => setNotifAnchor(null)}
-        PaperProps={{ sx: { width: 340, borderRadius: 2, mt: 1 } }}
+        PaperProps={{
+          sx: {
+            width: 380,
+            borderRadius: '24px',
+            mt: 1.5,
+            overflow: 'hidden',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 24px 60px rgba(15, 23, 42, 0.16)',
+            backgroundImage: 'none',
+          },
+        }}
         transformOrigin={{ horizontal: 'right', vertical: 'top' }}
         anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
-        <div className="px-4 py-3 border-b border-slate-100">
-          <p className="font-heading font-600 text-slate-900 text-sm">Notifications</p>
-          <p className="text-xs text-slate-400">{unreadCount} unread</p>
-        </div>
-        {notifications.map((n) => (
-          <MenuItem key={n.id} onClick={() => setNotifAnchor(null)}
-            sx={{ py: 1.5, px: 2, borderLeft: n.unread ? '3px solid #4f46e5' : '3px solid transparent' }}>
-            <div className="w-full">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-semibold text-slate-800">{n.title}</p>
-                <span className="text-xs text-slate-400">{n.time}</span>
-              </div>
-              <p className="text-xs text-slate-500 mt-0.5">{n.desc}</p>
+        <div className="border-b border-slate-200 bg-[linear-gradient(180deg,#ffffff_0%,#f8fafc_100%)] px-5 py-4">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <p className="font-finance-display text-lg font-extrabold text-slate-950">Notifications</p>
+              <p className="mt-1 text-xs uppercase tracking-[0.25em] text-slate-400">{unreadCount} unread updates</p>
             </div>
-          </MenuItem>
-        ))}
-        <div className="px-4 py-2.5 border-t border-slate-100">
-          <button className="text-xs text-primary-600 font-semibold hover:text-primary-700 w-full text-center">
+            <div className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-600">
+              Today
+            </div>
+          </div>
+        </div>
+        <div className="max-h-[420px] overflow-y-auto bg-white px-3 py-3">
+          {notifications.map((n) => (
+            <MenuItem
+              key={n.id}
+              onClick={() => setNotifAnchor(null)}
+              sx={{
+                alignItems: 'flex-start',
+                borderRadius: '18px',
+                px: 1.5,
+                py: 1.5,
+                mb: 1,
+                mx: 0.5,
+                backgroundColor: n.unread ? '#f8fafc' : 'transparent',
+              }}
+            >
+              <div className="flex w-full gap-3">
+                <div className="mt-1 flex flex-col items-center">
+                  <div
+                    className="h-2.5 w-2.5 rounded-full"
+                    style={{ backgroundColor: n.tone }}
+                  />
+                  {n.unread ? <div className="mt-2 h-8 w-px bg-slate-200" /> : null}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-3">
+                    <p className="text-sm font-semibold text-slate-900">{n.title}</p>
+                    <span className="whitespace-nowrap rounded-full bg-slate-100 px-2.5 py-1 text-[11px] font-bold text-slate-500">
+                      {n.time}
+                    </span>
+                  </div>
+                  <p className="mt-1.5 text-xs leading-5 text-slate-500">{n.desc}</p>
+                  <div className="mt-3 flex items-center gap-2">
+                    <span
+                      className="inline-flex rounded-full px-2.5 py-1 text-[11px] font-bold"
+                      style={{ backgroundColor: `${n.tone}18`, color: n.tone }}
+                    >
+                      {n.unread ? 'Needs attention' : 'Reviewed'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </MenuItem>
+          ))}
+        </div>
+        <div className="border-t border-slate-200 bg-slate-50 px-4 py-3">
+          <button className="w-full rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:border-slate-300 hover:bg-slate-50">
             View all notifications
           </button>
         </div>
+      </Menu>
+
+      <Menu
+        anchorEl={helpAnchor}
+        open={Boolean(helpAnchor)}
+        onClose={() => setHelpAnchor(null)}
+        PaperProps={{ sx: { width: 360, borderRadius: '20px', mt: 1 } }}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
+      >
+        {helpItems.map((item) => (
+          <MenuItem key={item} onClick={() => setHelpAnchor(null)} sx={{ whiteSpace: 'normal', py: 1.5 }}>
+            <span className="text-sm text-slate-700">{item}</span>
+          </MenuItem>
+        ))}
       </Menu>
 
       <Menu

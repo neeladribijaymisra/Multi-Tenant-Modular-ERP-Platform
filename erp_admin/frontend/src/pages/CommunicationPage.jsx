@@ -79,10 +79,10 @@ export default function CommunicationPage() {
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="finance-page">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fadeInUp">
         <div>
-          <h1 className="font-heading text-2xl font-700 text-slate-900">Communication</h1>
+          <h1 className="finance-page-title text-[2.5rem]">Communication</h1>
           <p className="text-slate-500 text-sm mt-0.5">Announcements, messages, and notifications</p>
         </div>
         <Button variant="contained" size="small" startIcon={<Add />} onClick={openAdd}>New Announcement</Button>
@@ -119,7 +119,7 @@ export default function CommunicationPage() {
       </div>
 
       {tab === 'announcements' && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden animate-fadeInUp">
+      <div className="finance-card overflow-hidden animate-fadeInUp">
           <div className="px-5 py-4 border-b border-slate-100">
             <TextField placeholder="Search announcements..." value={search} onChange={handleSearch} size="small" fullWidth
               InputProps={{ startAdornment: <InputAdornment position="start"><Search sx={{ fontSize: 18, color: '#94a3b8' }} /></InputAdornment> }} />
@@ -162,7 +162,7 @@ export default function CommunicationPage() {
       )}
 
       {tab === 'messages' && (
-        <div className="bg-white rounded-2xl border border-slate-100 shadow-card p-8 text-center text-slate-400 animate-fadeInUp">
+        <div className="finance-card p-8 text-center text-slate-400 animate-fadeInUp">
           <Forum sx={{ fontSize: 48, opacity: 0.3 }} />
           <p className="mt-3 font-medium">Messaging module</p>
           <p className="text-sm mt-1">Direct messaging between admin, faculty, and students coming soon.</p>

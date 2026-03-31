@@ -234,7 +234,7 @@ export default function LoginPage() {
 
             <div className="mt-6 pt-5 border-t border-slate-100">
               <p className="text-center text-xs text-slate-400">
-                 <span className="font-mono text-slate-600">Contact Master Admin for access</span> if you do not have credentials.
+                 <span className="font-mono text-slate-600">Contact myayrainfo@gmail.com for access</span> if you do not have credentials.
               </p>
             </div>
           </div>

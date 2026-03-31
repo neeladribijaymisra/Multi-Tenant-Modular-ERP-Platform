@@ -140,11 +140,11 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="finance-page">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fadeInUp">
         <div>
-          <h1 className="font-heading text-2xl font-700 text-slate-900">Dashboard</h1>
+          <h1 className="finance-page-title text-[2.5rem]">Dashboard</h1>
           <p className="text-slate-500 text-sm mt-0.5 flex items-center gap-1.5">
             <CalendarToday sx={{ fontSize: 14 }} />
             {today}
@@ -188,7 +188,7 @@ export default function DashboardPage() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* Enrollment Chart */}
-        <div className="lg:col-span-2 bg-white rounded-2xl p-5 shadow-card border border-slate-100 animate-fadeInUp">
+        <div className="lg:col-span-2 finance-card p-5 animate-fadeInUp">
           <div className="flex items-center justify-between mb-5">
             <div>
               <h3 className="font-heading font-600 text-slate-900 text-base">Student Enrollment Trend</h3>
@@ -218,7 +218,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Dept Distribution */}
-        <div className="bg-white rounded-2xl p-5 shadow-card border border-slate-100 animate-fadeInUp">
+        <div className="finance-card p-5 animate-fadeInUp">
           <div className="mb-5">
             <h3 className="font-heading font-600 text-slate-900 text-base">Dept. Distribution</h3>
             <p className="text-xs text-slate-400 mt-0.5">Students per department</p>
@@ -256,7 +256,7 @@ export default function DashboardPage() {
       {/* Upcoming Exams + Recent Announcements */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
         {/* Upcoming Exams */}
-        <div className="bg-white rounded-2xl p-5 shadow-card border border-slate-100 animate-fadeInUp">
+        <div className="finance-card p-5 animate-fadeInUp">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-heading font-600 text-slate-900 text-base">Upcoming Exams</h3>
             <button className="text-xs text-primary-600 font-semibold flex items-center gap-1">
@@ -284,7 +284,7 @@ export default function DashboardPage() {
         </div>
 
         {/* Recent Announcements */}
-        <div className="bg-white rounded-2xl p-5 shadow-card border border-slate-100 animate-fadeInUp">
+        <div className="finance-card p-5 animate-fadeInUp">
           <div className="flex items-center justify-between mb-4">
             <h3 className="font-heading font-600 text-slate-900 text-base">Recent Announcements</h3>
             <button className="text-xs text-primary-600 font-semibold flex items-center gap-1">
@@ -314,7 +314,7 @@ export default function DashboardPage() {
       </div>
 
       {user?.role === 'superadmin' && (
-        <div className="bg-white rounded-2xl p-5 shadow-card border border-slate-100 animate-fadeInUp">
+        <div className="finance-card p-5 animate-fadeInUp">
           <div className="mb-4">
             <h3 className="font-heading font-600 text-slate-900 text-base">Master Admin Controls</h3>
             <p className="text-xs text-slate-400 mt-0.5">

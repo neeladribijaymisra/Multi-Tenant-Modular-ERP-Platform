@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@500;600;700;800&display=swap');
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -8,29 +10,31 @@
   }
 
   html {
-    font-family: 'DM Sans', sans-serif;
+    font-family: 'Inter', sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
   body {
     margin: 0;
-    background-color: #f8fafc;
+    background:
+      radial-gradient(circle at top left, rgba(37, 99, 235, 0.08), transparent 32%),
+      linear-gradient(180deg, #eef2ff 0%, #f8fafc 38%, #eef1f5 100%);
     color: #0f172a;
   }
 
   h1, h2, h3, h4, h5, h6 {
-    font-family: 'Sora', sans-serif;
+    font-family: 'Manrope', sans-serif;
   }
 }
 
 @layer components {
   .sidebar-link {
-    @apply flex items-center gap-3 px-4 py-2.5 rounded-xl text-slate-600 font-medium text-sm transition-all duration-200 hover:bg-primary-50 hover:text-primary-700 cursor-pointer;
+    @apply flex items-center gap-3 px-4 py-3 rounded-2xl text-slate-500 font-semibold text-sm transition-all duration-200 hover:bg-slate-900 hover:text-white cursor-pointer;
   }
 
   .sidebar-link.active {
-    @apply bg-primary-600 text-white shadow-md hover:bg-primary-700 hover:text-white;
+    @apply bg-slate-900 text-white shadow-card hover:bg-slate-950 hover:text-white;
   }
 
   .sidebar-link.active .link-icon {
@@ -38,11 +42,11 @@
   }
 
   .stat-card {
-    @apply bg-white rounded-2xl p-5 shadow-card hover:shadow-card-hover transition-all duration-300 border border-slate-100;
+    @apply rounded-[28px] border border-slate-200/80 bg-white/90 p-5 shadow-card hover:shadow-card-hover transition-all duration-300 backdrop-blur;
   }
 
   .page-header {
-    @apply font-heading font-700 text-slate-900 text-2xl tracking-tight;
+    @apply font-heading font-extrabold text-slate-950 text-2xl tracking-tight;
   }
 
   .badge {
@@ -66,11 +70,51 @@
   }
 
   .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-semibold py-2.5 px-5 rounded-xl transition-all duration-200 text-sm shadow-sm hover:shadow-md;
+    @apply bg-slate-900 hover:bg-slate-950 text-white font-semibold py-2.5 px-5 rounded-2xl transition-all duration-200 text-sm shadow-sm hover:shadow-md;
   }
 
   .btn-secondary {
-    @apply bg-white hover:bg-slate-50 text-slate-700 font-semibold py-2.5 px-5 rounded-xl border border-slate-200 transition-all duration-200 text-sm;
+    @apply bg-white/90 hover:bg-white text-slate-700 font-semibold py-2.5 px-5 rounded-2xl border border-slate-200 transition-all duration-200 text-sm;
+  }
+
+  .font-finance-body {
+    font-family: 'Inter', sans-serif;
+  }
+
+  .font-finance-display {
+    font-family: 'Manrope', sans-serif;
+  }
+
+  .finance-card {
+    @apply rounded-[28px] border border-slate-200/80 bg-white/90 shadow-[0_20px_45px_rgba(15,23,42,0.08)] backdrop-blur;
+  }
+
+  .finance-panel {
+    @apply finance-card;
+  }
+
+  .finance-page {
+    @apply font-finance-body space-y-5 text-slate-900;
+  }
+
+  .finance-page-title {
+    @apply font-finance-display text-4xl font-extrabold tracking-tight text-slate-950;
+  }
+
+  .finance-page-subtitle {
+    @apply mt-2 text-sm text-slate-500;
+  }
+
+  .finance-surface {
+    @apply finance-card;
+  }
+
+  .finance-nav-link {
+    @apply flex items-center gap-3 rounded-2xl px-4 py-3 text-sm font-semibold text-slate-500 transition-all duration-200 hover:bg-slate-900 hover:text-white;
+  }
+
+  .finance-nav-link.active {
+    @apply bg-slate-900 text-white shadow-[0_12px_25px_rgba(15,23,42,0.18)];
   }
 }
 

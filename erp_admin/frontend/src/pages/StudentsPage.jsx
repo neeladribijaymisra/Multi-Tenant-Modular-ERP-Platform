@@ -96,10 +96,10 @@ export default function StudentsPage() {
   ];
 
   return (
-    <div className="space-y-5">
+    <div className="finance-page">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fadeInUp">
         <div>
-          <h1 className="font-heading text-2xl font-700 text-slate-900">Students</h1>
+          <h1 className="finance-page-title text-[2.5rem]">Students</h1>
           <p className="text-slate-500 text-sm mt-0.5">Manage student records, enrollment, and academic data</p>
         </div>
         <div className="flex gap-2.5">
@@ -129,7 +129,7 @@ export default function StudentsPage() {
       </div>
 
       {/* Filters */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-card p-4 flex flex-col sm:flex-row gap-3 animate-fadeInUp">
+      <div className="finance-card p-4 flex flex-col sm:flex-row gap-3 animate-fadeInUp">
         <TextField placeholder="Search by name, ID or email..." value={search} onChange={handleSearch} size="small" sx={{ flex: 1 }}
           InputProps={{ startAdornment: <InputAdornment position="start"><Search sx={{ fontSize: 18, color: '#94a3b8' }} /></InputAdornment> }} />
         <FormControl size="small" sx={{ minWidth: 180 }}>
@@ -149,7 +149,7 @@ export default function StudentsPage() {
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden animate-fadeInUp">
+      <div className="finance-card overflow-hidden animate-fadeInUp">
         <TableContainer>
           <Table>
             <TableHead>

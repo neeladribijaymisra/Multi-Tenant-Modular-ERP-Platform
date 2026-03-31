@@ -76,10 +76,10 @@ export default function TeachersPage() {
   };
 
   return (
-    <div className="space-y-5">
+    <div className="finance-page">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 animate-fadeInUp">
         <div>
-          <h1 className="font-heading text-2xl font-700 text-slate-900">Faculty & Teachers</h1>
+          <h1 className="finance-page-title text-[2.5rem]">Faculty & Teachers</h1>
           <p className="text-slate-500 text-sm mt-0.5">Manage faculty profiles, assignments, and performance</p>
         </div>
         <div className="flex gap-2.5">
@@ -106,13 +106,13 @@ export default function TeachersPage() {
       </div>
 
       {/* Search */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-card p-4 flex gap-3 animate-fadeInUp">
+      <div className="finance-card p-4 flex gap-3 animate-fadeInUp">
         <TextField placeholder="Search faculty by name or department..." value={search} onChange={handleSearch} size="small" sx={{ flex: 1 }}
           InputProps={{ startAdornment: <InputAdornment position="start"><Search sx={{ fontSize: 18, color: '#94a3b8' }} /></InputAdornment> }} />
       </div>
 
       {/* Table */}
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden animate-fadeInUp">
+      <div className="finance-card overflow-hidden animate-fadeInUp">
         <TableContainer>
           <Table>
             <TableHead>

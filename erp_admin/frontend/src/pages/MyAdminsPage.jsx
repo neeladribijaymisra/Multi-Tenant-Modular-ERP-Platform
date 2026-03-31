@@ -50,9 +50,9 @@ export default function MyAdminsPage() {
   }
 
   return (
-    <div className="space-y-5">
+    <div className="finance-page">
       <div className="animate-fadeInUp">
-        <h1 className="font-heading text-2xl font-700 text-slate-900">My Admins</h1>
+        <h1 className="finance-page-title text-[2.5rem]">My Admins</h1>
         <p className="text-slate-500 text-sm mt-0.5">
           Review active administrator accounts, archived admins, and lifecycle activity in one place.
         </p>
@@ -82,7 +82,7 @@ export default function MyAdminsPage() {
         })}
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-card p-5">
+      <div className="finance-card p-5">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
             <h2 className="font-heading font-600 text-slate-900 text-lg">Active Admin Roster</h2>
@@ -156,7 +156,7 @@ export default function MyAdminsPage() {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-card p-5">
+      <div className="finance-card p-5">
         <div className="mb-4">
           <h2 className="font-heading font-600 text-slate-900 text-lg">Removed Admin History</h2>
           <p className="text-xs text-slate-400 mt-1">Archived admins remain visible here with service dates and last known activity.</p>

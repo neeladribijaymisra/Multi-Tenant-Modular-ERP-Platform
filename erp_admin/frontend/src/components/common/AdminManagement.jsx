@@ -160,7 +160,7 @@ export default function AdminManagement({ compact = false }) {
         </Button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-100 shadow-card overflow-hidden">
+      <div className="finance-card overflow-hidden">
         <TableContainer>
           <Table size={compact ? 'small' : 'medium'}>
             <TableHead>

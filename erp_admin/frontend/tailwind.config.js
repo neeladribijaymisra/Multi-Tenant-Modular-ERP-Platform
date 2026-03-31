@@ -8,22 +8,22 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        heading: ['"Sora"', 'sans-serif'],
-        body: ['"DM Sans"', 'sans-serif'],
+        heading: ['"Manrope"', 'sans-serif'],
+        body: ['"Inter"', 'sans-serif'],
         mono: ['"JetBrains Mono"', 'monospace'],
       },
       colors: {
         primary: {
-          50: '#eef2ff',
-          100: '#e0e7ff',
-          200: '#c7d2fe',
-          300: '#a5b4fc',
-          400: '#818cf8',
-          500: '#6366f1',
-          600: '#4f46e5',
-          700: '#4338ca',
-          800: '#3730a3',
-          900: '#312e81',
+          50: '#eff6ff',
+          100: '#dbeafe',
+          200: '#bfdbfe',
+          300: '#93c5fd',
+          400: '#60a5fa',
+          500: '#3b82f6',
+          600: '#2563eb',
+          700: '#1d4ed8',
+          800: '#1e40af',
+          900: '#1e3a8a',
         },
         surface: {
           DEFAULT: '#ffffff',
@@ -32,9 +32,9 @@ export default {
         }
       },
       boxShadow: {
-        'card': '0 1px 3px 0 rgba(0,0,0,0.06), 0 1px 2px -1px rgba(0,0,0,0.04)',
-        'card-hover': '0 10px 25px -5px rgba(0,0,0,0.08), 0 4px 10px -6px rgba(0,0,0,0.04)',
-        'sidebar': '2px 0 20px rgba(0,0,0,0.06)',
+        'card': '0 20px 45px rgba(15,23,42,0.08)',
+        'card-hover': '0 24px 55px rgba(15,23,42,0.12)',
+        'sidebar': '0 18px 45px rgba(15,23,42,0.08)',
       }
     },
   },

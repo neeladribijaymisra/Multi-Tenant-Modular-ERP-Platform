@@ -78,21 +78,21 @@ export default function SettingsPage() {
   const clearMessages = () => { setError(''); setSuccess(''); };
 
   return (
-    <div className="space-y-5">
+    <div className="finance-page">
       <div className="animate-fadeInUp">
-        <h1 className="font-heading text-2xl font-700 text-slate-900">Settings</h1>
+        <h1 className="finance-page-title text-[2.5rem]">Settings</h1>
         <p className="text-slate-500 text-sm mt-0.5">Manage your account, university, and system preferences</p>
       </div>
 
       <div className="flex flex-col lg:flex-row gap-5 animate-fadeInUp">
         {/* Sidebar */}
         <div className="lg:w-56 flex-shrink-0">
-          <div className="bg-white rounded-2xl border border-slate-100 shadow-card p-3 space-y-1">
+          <div className="finance-card p-3 space-y-1">
             {sections.map((s) => {
               const Icon = s.icon;
               return (
                 <button key={s.id} onClick={() => { setActive(s.id); clearMessages(); }}
-                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all ${active === s.id ? 'bg-primary-50 text-primary-700' : 'text-slate-600 hover:bg-slate-50'}`}>
+                  className={`w-full flex items-center gap-3 px-3 py-3 rounded-2xl text-sm font-semibold transition-all ${active === s.id ? 'bg-slate-900 text-white shadow-card' : 'text-slate-600 hover:bg-white'}`}>
                   <Icon sx={{ fontSize: 18 }} />
                   {s.label}
                 </button>
@@ -102,7 +102,7 @@ export default function SettingsPage() {
         </div>
 
         {/* Content */}
-        <div className="flex-1 bg-white rounded-2xl border border-slate-100 shadow-card p-6">
+        <div className="finance-card flex-1 p-6">
           {error && <Alert severity="error" onClose={clearMessages} sx={{ mb: 3 }}>{error}</Alert>}
           {success && <Alert severity="success" onClose={clearMessages} sx={{ mb: 3 }}>{success}</Alert>}
 
