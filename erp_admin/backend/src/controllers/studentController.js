@@ -1,6 +1,13 @@
 import Student from '../models/Student.js';
 import { sendSuccess, sendError, getPagination, paginationMeta } from '../utils/apiResponse.js';
 
+const normalizeStudentPayload = (payload = {}) => ({
+  ...payload,
+  rollNo: payload.rollNo?.trim().toUpperCase(),
+  email: payload.email?.trim().toLowerCase(),
+  name: payload.name?.trim(),
+});
+
 // ── @GET /api/students ──────────────────────────────────────
 export const getStudents = async (req, res, next) => {
   try {
@@ -42,7 +49,22 @@ export const getStudent = async (req, res, next) => {
 // ── @POST /api/students ─────────────────────────────────────
 export const createStudent = async (req, res, next) => {
   try {
-    const student = await Student.create(req.body);
+    const payload = normalizeStudentPayload(req.body);
+
+    const [existingRollNo, existingEmail] = await Promise.all([
+      payload.rollNo ? Student.findOne({ rollNo: payload.rollNo }).lean() : null,
+      payload.email ? Student.findOne({ email: payload.email }).lean() : null,
+    ]);
+
+    if (existingRollNo) {
+      return sendError(res, `A student with roll number ${payload.rollNo} already exists.`, 400);
+    }
+
+    if (existingEmail) {
+      return sendError(res, `A student with email ${payload.email} already exists.`, 400);
+    }
+
+    const student = await Student.create(payload);
     return sendSuccess(res, { student }, 'Student created successfully', 201);
   } catch (error) {
     next(error);
@@ -52,7 +74,22 @@ export const createStudent = async (req, res, next) => {
 // ── @PUT /api/students/:id ──────────────────────────────────
 export const updateStudent = async (req, res, next) => {
   try {
-    const student = await Student.findByIdAndUpdate(req.params.id, req.body, {
+    const payload = normalizeStudentPayload(req.body);
+
+    const [existingRollNo, existingEmail] = await Promise.all([
+      payload.rollNo ? Student.findOne({ rollNo: payload.rollNo, _id: { $ne: req.params.id } }).lean() : null,
+      payload.email ? Student.findOne({ email: payload.email, _id: { $ne: req.params.id } }).lean() : null,
+    ]);
+
+    if (existingRollNo) {
+      return sendError(res, `A student with roll number ${payload.rollNo} already exists.`, 400);
+    }
+
+    if (existingEmail) {
+      return sendError(res, `A student with email ${payload.email} already exists.`, 400);
+    }
+
+    const student = await Student.findByIdAndUpdate(req.params.id, payload, {
       new: true, runValidators: true,
     });
     if (!student) return sendError(res, 'Student not found.', 404);

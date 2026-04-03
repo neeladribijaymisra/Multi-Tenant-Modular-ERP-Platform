@@ -117,6 +117,15 @@ export default function AdminLayout() {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Accounts portal: FinancePage is a fully standalone workspace — render nothing around it
+  if (user?.portal === 'accounts') {
+    return (
+      <main className="h-screen overflow-hidden">
+        <Outlet />
+      </main>
+    );
+  }
+
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
   const [notifAnchor, setNotifAnchor] = useState(null);

@@ -17,9 +17,11 @@ import studentRoutes from './routes/studentRoutes.js';
 import teacherRoutes from './routes/teacherRoutes.js';
 import academicsRoutes from './routes/academicsRoutes.js';
 import financeRoutes from './routes/financeRoutes.js';
+import payrollRoutes from './routes/payrollRoutes.js';
 import communicationRoutes from './routes/communicationRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import reminderRoutes from './routes/reminderRoutes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -89,9 +91,11 @@ app.use('/api/students', studentRoutes);
 app.use('/api/teachers', teacherRoutes);
 app.use('/api/academics', academicsRoutes);
 app.use('/api/finance', financeRoutes);
+app.use('/api/payroll', payrollRoutes);
 app.use('/api/communication', communicationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admins', adminRoutes);
+app.use('/api/reminders', reminderRoutes);
 
 // ── 404 Handler ──────────────────────────────────────────────
 app.use((req, res) => {

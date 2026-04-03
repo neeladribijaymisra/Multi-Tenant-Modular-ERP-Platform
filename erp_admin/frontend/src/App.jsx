@@ -48,7 +48,7 @@ function AppRoutes() {
         <Route path="students" element={<MasterRoute><StudentsPage /></MasterRoute>} />
         <Route path="teachers" element={<MasterRoute><TeachersPage /></MasterRoute>} />
         <Route path="academics" element={<MasterRoute><AcademicsPage /></MasterRoute>} />
-        <Route path="finance" element={<FinancePage />} />
+        <Route path="finance/*" element={<FinancePage />} />
         <Route path="communication" element={<MasterRoute><CommunicationPage /></MasterRoute>} />
         <Route path="my-admins" element={<MasterRoute><MyAdminsPage /></MasterRoute>} />
         <Route path="settings" element={<MasterRoute><SettingsPage /></MasterRoute>} />

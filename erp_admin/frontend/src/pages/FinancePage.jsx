@@ -44,6 +44,7 @@ import {
   Wallet,
 } from '@mui/icons-material';
 import StudentFinancePage from './StudentFinancePage';
+import PayrollPage from './PayrollPage';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
@@ -52,12 +53,19 @@ import { formatCurrency, formatDate } from '../utils/helpers';
 const financeNavItems = [
   { label: 'Finance Overview', path: 'overview' },
   { label: 'Students', path: 'students' },
+  { label: 'Payroll', path: 'payroll' },
   { label: 'Settings', path: 'settings' },
-  { label: 'Payroll', path: null },
-  { label: 'Management', path: null },
 ];
 
-const notifications = [
+const financeViews = new Set(['overview', 'students', 'payroll', 'settings']);
+
+const getFinanceViewFromPath = (pathname = '') => {
+  const segments = pathname.split('/').filter(Boolean);
+  const lastSegment = segments[segments.length - 1];
+  return financeViews.has(lastSegment) ? lastSegment : 'overview';
+};
+
+const initialNotifications = [
   { id: 1, title: 'Vendor invoice due', description: 'Campus maintenance invoice needs approval by Friday.', time: '1h ago', tone: '#d97706', unread: true },
   { id: 2, title: 'Payroll cycle ready', description: 'Monthly payroll batch has been reconciled for release.', time: '4h ago', tone: '#0f766e', unread: true },
   { id: 3, title: 'Budget review reminder', description: 'Engineering faculty budget variance crossed 3% threshold.', time: 'Yesterday', tone: '#2563eb', unread: false },
@@ -192,13 +200,15 @@ function MetricCard({ icon, title, value, subline, accent, trend }) {
 
 export default function FinancePage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, logout, updateUser } = useAuth();
 
-  const [view, setView] = useState('overview');
+  const [view, setView] = useState(() => getFinanceViewFromPath(location.pathname));
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifAnchor, setNotifAnchor] = useState(null);
   const [helpAnchor, setHelpAnchor] = useState(null);
   const [userAnchor, setUserAnchor] = useState(null);
+  const [notifications, setNotifications] = useState(initialNotifications);
   const [dialogOpen, setDialogOpen] = useState(false);
   // overview state
   const [overview, setOverview] = useState(null);
@@ -209,6 +219,7 @@ export default function FinancePage() {
   const [tableLoading, setTableLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
   const [form, setForm] = useState(defaultForm);
   // students state
   const [students, setStudents] = useState([]);
@@ -287,6 +298,17 @@ export default function FinancePage() {
     return () => clearTimeout(t);
   }, [studentSearch]);
 
+  useEffect(() => {
+    const nextView = getFinanceViewFromPath(location.pathname);
+    setView((current) => (current === nextView ? current : nextView));
+  }, [location.pathname]);
+
+  const handleViewChange = useCallback((nextView) => {
+    if (!nextView) return;
+    setView(nextView);
+    navigate(nextView === 'overview' ? '/finance' : `/finance/${nextView}`);
+  }, [navigate]);
+
   const handleProfileSave = async () => {
     setProfileSaving(true); setProfileError(''); setProfileSuccess('');
     try {
@@ -356,6 +378,34 @@ export default function FinancePage() {
     }
   };
 
+  const handleStudentReminder = useCallback((student) => {
+    if (!student) return;
+
+    const notificationBaseId = Date.now();
+    const studentLabel = student.rollNo ? `${student.name} (${student.rollNo})` : student.name;
+
+    setNotifications((current) => [
+      {
+        id: notificationBaseId,
+        title: 'Payment reminder sent',
+        description: `Fee reminder has been added to the student notification center for ${studentLabel}.`,
+        time: 'Just now',
+        tone: '#d97706',
+        unread: true,
+      },
+      {
+        id: notificationBaseId + 1,
+        title: 'Reminder email queued',
+        description: `Email notification prepared for ${student.email || studentLabel} from the Accounts Portal.`,
+        time: 'Just now',
+        tone: '#2563eb',
+        unread: true,
+      },
+      ...current,
+    ]);
+    setSuccess(`Reminder sent to ${student.name}. Email and notification entries were added.`);
+  }, []);
+
   const chartData = overview?.chart || [];
   const budgetAllocation = overview?.budgetAllocation || [];
 
@@ -406,6 +456,12 @@ export default function FinancePage() {
           <CircularProgress size={26} />
         </div>
       );
+    }
+    if (view === 'payroll') {
+      return <PayrollPage />;
+    }
+    if (view === 'students') {
+      return <StudentFinancePage onSendReminder={handleStudentReminder} />;
     }
     return (
       <div className="finance-page">
@@ -600,12 +656,12 @@ export default function FinancePage() {
     <div className="font-finance-body flex h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.08),_transparent_32%),linear-gradient(180deg,#eef2ff_0%,#f8fafc_38%,#eef1f5_100%)] text-slate-900">
       <aside className="hidden w-[290px] flex-shrink-0 border-r border-white/60 bg-[#f6f7fb]/95 lg:flex">
         <div className="fixed flex h-screen w-[290px] flex-col">
-          <SidebarContent onGenerateReport={handleGenerateReport} activeView={view} onViewChange={setView} />
+          <SidebarContent onGenerateReport={handleGenerateReport} activeView={view} onViewChange={handleViewChange} />
         </div>
       </aside>
 
       <Drawer open={mobileOpen} onClose={() => setMobileOpen(false)} PaperProps={{ sx: { width: 290 } }}>
-        <SidebarContent onClose={() => setMobileOpen(false)} onGenerateReport={handleGenerateReport} activeView={view} onViewChange={setView} />
+        <SidebarContent onClose={() => setMobileOpen(false)} onGenerateReport={handleGenerateReport} activeView={view} onViewChange={handleViewChange} />
       </Drawer>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -666,7 +722,87 @@ export default function FinancePage() {
         </header>
 
         <main className="min-h-0 flex-1 overflow-y-auto px-4 py-5 lg:px-8 lg:py-8">
-          {view === 'students' && <StudentFinancePage />}
+          {view === 'students' && <StudentFinancePage onSendReminder={handleStudentReminder} />}
+          {view === 'payroll' && <PayrollPage />}
+
+          {view === 'settings' && (
+            <div className="max-w-2xl mx-auto space-y-6">
+              <div>
+                <h2 className="font-finance-display text-3xl font-extrabold text-slate-950">Profile Settings</h2>
+                <p className="mt-1 text-sm text-slate-500">Manage your account details and security</p>
+              </div>
+
+              {/* Profile card */}
+              <div className="finance-card p-6">
+                <div className="flex items-center gap-4 mb-6 pb-6 border-b border-slate-100">
+                  <Avatar sx={{ width: 64, height: 64, bgcolor: '#0f172a', fontSize: 22, fontWeight: 800 }}>
+                    {user?.name?.charAt(0) || 'A'}
+                  </Avatar>
+                  <div>
+                    <p className="font-bold text-lg text-slate-900">{user?.name}</p>
+                    <p className="text-sm text-slate-500">{user?.email}</p>
+                    <p className="text-xs text-slate-400 mt-0.5 capitalize">{user?.department} · {user?.role}</p>
+                  </div>
+                </div>
+
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Personal Information</p>
+                {profileError && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setProfileError('')}>{profileError}</Alert>}
+                {profileSuccess && <Alert severity="success" sx={{ mb: 3 }} onClose={() => setProfileSuccess('')}>{profileSuccess}</Alert>}
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <TextField fullWidth label="Full Name" value={profileForm.name}
+                    onChange={(e) => setProfileForm((f) => ({ ...f, name: e.target.value }))}
+                    size="small" sx={fieldSx} />
+                  <TextField fullWidth label="Email" value={profileForm.email}
+                    onChange={(e) => setProfileForm((f) => ({ ...f, email: e.target.value }))}
+                    size="small" sx={fieldSx} />
+                  <TextField fullWidth label="Phone" value={profileForm.phone}
+                    onChange={(e) => setProfileForm((f) => ({ ...f, phone: e.target.value }))}
+                    size="small" sx={fieldSx} />
+                  <TextField fullWidth label="Username" value={user?.username || ''} size="small" disabled sx={fieldSx} />
+                </div>
+
+                <Button
+                  variant="contained" onClick={handleProfileSave} disabled={profileSaving}
+                  startIcon={profileSaving ? <CircularProgress size={16} color="inherit" /> : <Save />}
+                  sx={{ mt: 4, bgcolor: '#0f172a', borderRadius: '14px', textTransform: 'none', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#1e293b' } }}
+                >
+                  Save Changes
+                </Button>
+              </div>
+
+              {/* Password card */}
+              <div className="finance-card p-6">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400 mb-4">Change Password</p>
+                {pwError && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setPwError('')}>{pwError}</Alert>}
+                {pwSuccess && <Alert severity="success" sx={{ mb: 3 }} onClose={() => setPwSuccess('')}>{pwSuccess}</Alert>}
+
+                <div className="space-y-4">
+                  <TextField fullWidth label="Current Password" type="password" size="small"
+                    value={pwForm.currentPassword}
+                    onChange={(e) => setPwForm((f) => ({ ...f, currentPassword: e.target.value }))}
+                    sx={fieldSx} />
+                  <TextField fullWidth label="New Password" type="password" size="small"
+                    value={pwForm.newPassword}
+                    onChange={(e) => setPwForm((f) => ({ ...f, newPassword: e.target.value }))}
+                    sx={fieldSx} />
+                  <TextField fullWidth label="Confirm New Password" type="password" size="small"
+                    value={pwForm.confirmPassword}
+                    onChange={(e) => setPwForm((f) => ({ ...f, confirmPassword: e.target.value }))}
+                    sx={fieldSx} />
+                </div>
+
+                <Button
+                  variant="contained" onClick={handlePasswordSave}
+                  disabled={pwSaving || !pwForm.currentPassword || !pwForm.newPassword}
+                  startIcon={pwSaving ? <CircularProgress size={16} color="inherit" /> : <Lock />}
+                  sx={{ mt: 4, bgcolor: '#0f172a', borderRadius: '14px', textTransform: 'none', fontWeight: 700, px: 3, '&:hover': { bgcolor: '#1e293b' } }}
+                >
+                  Update Password
+                </Button>
+              </div>
+            </div>
+          )}
 
           {view === 'overview' && (
             <>
