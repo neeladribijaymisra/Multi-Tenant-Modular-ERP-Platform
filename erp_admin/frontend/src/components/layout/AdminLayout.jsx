@@ -30,7 +30,10 @@ const bottomItems = [
 function SidebarContent({ onClose, user }) {
   const location = useLocation();
   const navigate = useNavigate();
-  const navItems = user?.role === 'superadmin' ? [...baseNavItems, adminNavItem] : baseNavItems;
+  const navItems = useMemo(() => {
+    if (user?.portal === 'accounts') return [];
+    return user?.role === 'superadmin' ? [...baseNavItems, adminNavItem] : baseNavItems;
+  }, [user]);
 
   const handleNav = (path) => {
     navigate(path);
@@ -113,7 +116,6 @@ export default function AdminLayout() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const isFinanceWorkspace = location.pathname.startsWith('/finance');
 
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -237,14 +239,6 @@ export default function AdminLayout() {
     setSearchOpen(false);
     setSearchVal('');
   };
-
-  if (isFinanceWorkspace) {
-    return (
-      <main className="h-screen overflow-hidden bg-slate-100">
-        <Outlet />
-      </main>
-    );
-  }
 
   return (
     <div className="font-finance-body flex h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.08),_transparent_32%),linear-gradient(180deg,#eef2ff_0%,#f8fafc_38%,#eef1f5_100%)]">

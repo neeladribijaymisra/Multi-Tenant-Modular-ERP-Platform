@@ -26,7 +26,16 @@ function ProtectedRoute({ children }) {
 
 function PublicRoute({ children }) {
   const { user } = useAuth();
-  return user ? <Navigate to="/dashboard" replace /> : children;
+  if (!user) return children;
+  return <Navigate to={user.portal === 'accounts' ? '/finance' : '/dashboard'} replace />;
+}
+
+// Blocks accounts portal users from accessing non-finance pages
+function MasterRoute({ children }) {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  if (user.portal === 'accounts') return <Navigate to="/finance" replace />;
+  return children;
 }
 
 function AppRoutes() {
@@ -35,14 +44,14 @@ function AppRoutes() {
       <Route path="/" element={<Navigate to="/login" replace />} />
       <Route path="/login" element={<PublicRoute><LoginPage /></PublicRoute>} />
       <Route path="/" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-        <Route path="dashboard" element={<DashboardPage />} />
-        <Route path="students" element={<StudentsPage />} />
-        <Route path="teachers" element={<TeachersPage />} />
-        <Route path="academics" element={<AcademicsPage />} />
+        <Route path="dashboard" element={<MasterRoute><DashboardPage /></MasterRoute>} />
+        <Route path="students" element={<MasterRoute><StudentsPage /></MasterRoute>} />
+        <Route path="teachers" element={<MasterRoute><TeachersPage /></MasterRoute>} />
+        <Route path="academics" element={<MasterRoute><AcademicsPage /></MasterRoute>} />
         <Route path="finance" element={<FinancePage />} />
-        <Route path="communication" element={<CommunicationPage />} />
-        <Route path="my-admins" element={<MyAdminsPage />} />
-        <Route path="settings" element={<SettingsPage />} />
+        <Route path="communication" element={<MasterRoute><CommunicationPage /></MasterRoute>} />
+        <Route path="my-admins" element={<MasterRoute><MyAdminsPage /></MasterRoute>} />
+        <Route path="settings" element={<MasterRoute><SettingsPage /></MasterRoute>} />
       </Route>
       <Route path="*" element={<NotFoundPage />} />
     </Routes>

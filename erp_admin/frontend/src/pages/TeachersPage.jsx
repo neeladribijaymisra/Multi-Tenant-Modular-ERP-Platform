@@ -1,17 +1,19 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Button, TextField, InputAdornment, Avatar, Chip, IconButton,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Tooltip, Pagination, FormControl, InputLabel, Select, MenuItem, CircularProgress, Alert,
 } from '@mui/material';
-import { Search, Add, Edit, Delete, Download, School, Star } from '@mui/icons-material';
+import { Search, Add, Edit, Delete, Download, School, Star, CameraAlt } from '@mui/icons-material';
 import api from '../utils/api';
 import { getInitials, stringToColor, debounce } from '../utils/helpers';
 import { DEPARTMENTS, FACULTY_DESIGNATIONS } from '../utils/constants';
 import FormDialog from '../components/common/FormDialog';
+import AddFacultyDialog from '../components/common/AddFacultyDialog';
 
 const ITEMS_PER_PAGE = 10;
-const emptyForm = { name: '', email: '', phone: '', facultyId: '', department: '', designation: '', subjects: '', experienceYears: '', status: 'Active' };
+const emptyForm = { name: '', email: '', phone: '', facultyId: '', department: '', designation: '', subjects: '', experienceYears: '', status: 'Active', avatar: '' };
+
 
 export default function TeachersPage() {
   const [teachers, setTeachers] = useState([]);
@@ -20,12 +22,14 @@ export default function TeachersPage() {
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [dialog, setDialog] = useState({ open: false, mode: 'add', data: null });
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const editPhotoRef = useRef(null);
 
-  const fetchTeachers = useCallback(async (q = search, pg = page) => {
+  const fetchTeachers = useCallback(async (q = '', pg = 1) => {
     setLoading(true);
     try {
       const params = { page: pg, limit: ITEMS_PER_PAGE };
@@ -44,26 +48,45 @@ export default function TeachersPage() {
     } catch { /* silent */ }
   }, []);
 
-  useEffect(() => { fetchTeachers(); fetchStats(); }, []);
+  useEffect(() => { fetchTeachers('', 1); fetchStats(); }, [fetchTeachers, fetchStats]);
 
-  const debouncedSearch = useCallback(debounce((val) => { setPage(1); fetchTeachers(val, 1); }, 400), []);
+  const debouncedSearch = useMemo(
+    () => debounce((val) => { setPage(1); fetchTeachers(val, 1); }, 350),
+    [fetchTeachers]
+  );
   const handleSearch = (e) => { setSearch(e.target.value); debouncedSearch(e.target.value); };
   const handlePage = (_, v) => { setPage(v); fetchTeachers(search, v); };
 
-  const openAdd = () => { setForm(emptyForm); setDialog({ open: true, mode: 'add', data: null }); };
+  const openAdd = () => { setError(''); setAddDialogOpen(true); };
   const openEdit = (t) => {
-    setForm({ name: t.name, email: t.email, phone: t.phone || '', facultyId: t.facultyId, department: t.department, designation: t.designation, subjects: (t.subjects || []).join(', '), experienceYears: t.experienceYears || '', status: t.status });
+    setForm({ name: t.name, email: t.email, phone: t.phone || '', facultyId: t.facultyId, department: t.department, designation: t.designation, subjects: (t.subjects || []).join(', '), experienceYears: t.experienceYears || '', status: t.status, avatar: t.avatar || '' });
     setDialog({ open: true, mode: 'edit', data: t });
   };
   const closeDialog = () => { setDialog({ open: false, mode: 'add', data: null }); setError(''); };
 
+  const handleAddFaculty = async (data) => {
+    setSaving(true);
+    setError('');
+    try {
+      await api.post('/teachers', data);
+      setAddDialogOpen(false);
+      fetchTeachers(search, 1);
+      fetchStats();
+      return true;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create faculty.');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true); setError('');
     try {
-      const payload = { ...form, subjects: form.subjects.split(',').map((s) => s.trim()).filter(Boolean), experienceYears: Number(form.experienceYears) || 0 };
-      if (dialog.mode === 'add') await api.post('/teachers', payload);
-      else await api.put(`/teachers/${dialog.data._id}`, payload);
-      closeDialog(); fetchTeachers(); fetchStats();
+      const payload = { ...form, subjects: form.subjects.split(',').map((s) => s.trim()).filter(Boolean), experienceYears: Number(form.experienceYears) || 0, avatar: form.avatar || '' };
+      await api.put(`/teachers/${dialog.data._id}`, payload);
+      closeDialog(); fetchTeachers(search, page); fetchStats();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save teacher.');
     } finally { setSaving(false); }
@@ -71,7 +94,7 @@ export default function TeachersPage() {
 
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this faculty member?')) return;
-    try { await api.delete(`/teachers/${id}`); fetchTeachers(); fetchStats(); }
+    try { await api.delete(`/teachers/${id}`); fetchTeachers(search, page); fetchStats(); }
     catch { setError('Failed to delete teacher.'); }
   };
 
@@ -136,7 +159,7 @@ export default function TeachersPage() {
                 <TableRow key={t._id} hover sx={{ '&:hover': { bgcolor: '#fafbff' } }}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <Avatar sx={{ width: 36, height: 36, bgcolor: stringToColor(t.name), fontSize: 13, fontWeight: 700 }}>{getInitials(t.name)}</Avatar>
+                      <Avatar src={t.avatar || ''} sx={{ width: 36, height: 36, bgcolor: stringToColor(t.name), fontSize: 13, fontWeight: 700 }}>{!t.avatar && getInitials(t.name)}</Avatar>
                       <div>
                         <p className="font-semibold text-sm text-slate-800">{t.name}</p>
                         <p className="text-xs text-slate-400">{t.email}</p>
@@ -174,19 +197,45 @@ export default function TeachersPage() {
         </div>
       </div>
 
-      {/* Add/Edit Dialog */}
+      <AddFacultyDialog
+        open={addDialogOpen}
+        onClose={() => { setAddDialogOpen(false); setError(''); }}
+        onSubmit={handleAddFaculty}
+        loading={saving}
+        error={error}
+      />
+
+      {/* Edit Dialog */}
       <FormDialog
         open={dialog.open}
         onClose={closeDialog}
-        title={dialog.mode === 'add' ? 'Add Faculty' : 'Edit Faculty'}
-        subtitle="Organize faculty records with department, designation, teaching subjects, and status."
+        title="Edit Faculty"
+        subtitle="Update faculty records with department, designation, teaching subjects, and status."
         error={error}
         onPrimary={handleSave}
         primaryDisabled={saving || !form.name || !form.email || !form.facultyId}
-        primaryLabel={dialog.mode === 'add' ? 'Add Faculty' : 'Save Changes'}
+        primaryLabel="Save Changes"
         loading={saving}
       >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2 flex items-center gap-4 pb-1">
+              <div className="relative">
+                <input ref={editPhotoRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onloadend = () => setForm((f) => ({ ...f, avatar: reader.result || '' }));
+                  reader.readAsDataURL(file);
+                }} />
+                <Avatar src={form.avatar || ''} sx={{ width: 56, height: 56, bgcolor: '#e2e8f0', fontSize: 18, fontWeight: 700 }}>
+                  {!form.avatar && form.name?.charAt(0)}
+                </Avatar>
+                <IconButton onClick={() => editPhotoRef.current?.click()} size="small" sx={{ position: 'absolute', bottom: -4, right: -4, width: 22, height: 22, bgcolor: '#0f172a', color: '#fff', '&:hover': { bgcolor: '#1e293b' } }}>
+                  <CameraAlt sx={{ fontSize: 12 }} />
+                </IconButton>
+              </div>
+              <p className="text-xs text-slate-500">Click the avatar to change photo</p>
+            </div>
             <TextField label="Full Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} size="small" fullWidth required />
             <TextField label="Faculty ID" value={form.facultyId} onChange={(e) => setForm({ ...form, facultyId: e.target.value })} size="small" fullWidth required />
             <TextField label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} size="small" fullWidth required />

@@ -1,20 +1,20 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import {
   Button, TextField, InputAdornment, Avatar, Chip, IconButton,
   Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
   Select, MenuItem, FormControl, InputLabel, Pagination, Tooltip,
   CircularProgress, Alert,
 } from '@mui/material';
-import { Search, Add, Download, Edit, Delete, People, School, CheckCircle, Cancel } from '@mui/icons-material';
+import { Search, Add, Download, Edit, Delete, People, School, CheckCircle, Cancel, CameraAlt } from '@mui/icons-material';
 import api, { createStudent } from '../utils/api';
-import { getInitials, stringToColor } from '../utils/helpers';
+import { getInitials, stringToColor, debounce } from '../utils/helpers';
 import { DEPARTMENTS, YEARS } from '../utils/constants';
 import FormDialog from '../components/common/FormDialog';
 import AddStudentDialog from '../components/common/AddStudentDialog';
 
 const ITEMS_PER_PAGE = 10;
 
-const emptyForm = { name: '', email: '', phone: '', rollNo: '', department: '', year: '', status: 'Active', feeStatus: 'Pending', cgpa: '' };
+const emptyForm = { name: '', email: '', phone: '', rollNo: '', department: '', year: '', status: 'Active', feeStatus: 'Pending', cgpa: '', avatar: '' };
 
 export default function StudentsPage() {
   const [students, setStudents] = useState([]);
@@ -30,6 +30,7 @@ export default function StudentsPage() {
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const editPhotoRef = useRef(null);
 
   const fetchStudents = useCallback(async (q = '', dept = '', yr = '', pg = 1) => {
     setLoading(true);
@@ -57,18 +58,23 @@ export default function StudentsPage() {
     fetchStats();
   }, [fetchStats, fetchStudents]);
 
+  const debouncedFetch = useMemo(
+    () => debounce((q, dept, yr, pg) => fetchStudents(q, dept, yr, pg), 350),
+    [fetchStudents]
+  );
+
   const handleSearch = (e) => {
     const value = e.target.value;
     setSearch(value);
     setPage(1);
-    fetchStudents(value, deptFilter, yearFilter, 1);
+    debouncedFetch(value, deptFilter, yearFilter, 1);
   };
-  const handleDept = (e) => { setDeptFilter(e.target.value); setPage(1); fetchStudents(search, e.target.value, yearFilter, 1); };
-  const handleYear = (e) => { setYearFilter(e.target.value); setPage(1); fetchStudents(search, deptFilter, e.target.value, 1); };
+  const handleDept = (e) => { const v = e.target.value; setDeptFilter(v); setPage(1); fetchStudents(search, v, yearFilter, 1); };
+  const handleYear = (e) => { const v = e.target.value; setYearFilter(v); setPage(1); fetchStudents(search, deptFilter, v, 1); };
   const handlePage = (_, v) => { setPage(v); fetchStudents(search, deptFilter, yearFilter, v); };
 
   const openAdd = () => { setError(''); setAddDialogOpen(true); };
-  const openEdit = (s) => { setForm({ name: s.name, email: s.email, phone: s.phone || '', rollNo: s.rollNo, department: s.department, year: s.year, status: s.status, feeStatus: s.feeStatus, cgpa: s.cgpa || '' }); setDialog({ open: true, mode: 'edit', data: s }); };
+  const openEdit = (s) => { setForm({ name: s.name, email: s.email, phone: s.phone || '', rollNo: s.rollNo, department: s.department, year: s.year, status: s.status, feeStatus: s.feeStatus, cgpa: s.cgpa || '', avatar: s.avatar || '' }); setDialog({ open: true, mode: 'edit', data: s }); };
   const closeDialog = () => { setDialog({ open: false, mode: 'add', data: null }); setError(''); };
   const handleEnrollmentSuccess = async () => {
     await Promise.all([
@@ -99,7 +105,7 @@ export default function StudentsPage() {
   const handleSave = async () => {
     setSaving(true); setError('');
     try {
-      await api.put(`/students/${dialog.data._id}`, form);
+      await api.put(`/students/${dialog.data._id}`, { ...form, avatar: form.avatar || '' });
       closeDialog();
       fetchStudents(search, deptFilter, yearFilter, page);
       fetchStats();
@@ -203,7 +209,7 @@ export default function StudentsPage() {
                   <TableCell>
                     <div className="flex items-center gap-3">
                       <Avatar src={s.avatar || ''} sx={{ width: 36, height: 36, bgcolor: stringToColor(s.name), fontSize: 14, fontWeight: 700 }}>
-                        {getInitials(s.name)}
+                        {!s.avatar && getInitials(s.name)}
                       </Avatar>
                       <div>
                         <p className="font-semibold text-sm text-slate-800">{s.name}</p>
@@ -261,6 +267,24 @@ export default function StudentsPage() {
         loading={saving}
       >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div className="sm:col-span-2 flex items-center gap-4 pb-1">
+              <div className="relative">
+                <input ref={editPhotoRef} type="file" accept="image/png,image/jpeg,image/webp" hidden onChange={(e) => {
+                  const file = e.target.files?.[0];
+                  if (!file) return;
+                  const reader = new FileReader();
+                  reader.onloadend = () => setForm((f) => ({ ...f, avatar: reader.result || '' }));
+                  reader.readAsDataURL(file);
+                }} />
+                <Avatar src={form.avatar || ''} sx={{ width: 56, height: 56, bgcolor: '#e2e8f0', fontSize: 18, fontWeight: 700 }}>
+                  {!form.avatar && form.name?.charAt(0)}
+                </Avatar>
+                <IconButton onClick={() => editPhotoRef.current?.click()} size="small" sx={{ position: 'absolute', bottom: -4, right: -4, width: 22, height: 22, bgcolor: '#0f172a', color: '#fff', '&:hover': { bgcolor: '#1e293b' } }}>
+                  <CameraAlt sx={{ fontSize: 12 }} />
+                </IconButton>
+              </div>
+              <p className="text-xs text-slate-500">Click the avatar to change photo</p>
+            </div>
             <TextField label="Full Name" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} size="small" fullWidth required />
             <TextField label="Roll No." value={form.rollNo} onChange={(e) => setForm({ ...form, rollNo: e.target.value })} size="small" fullWidth required />
             <TextField label="Email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} size="small" fullWidth required />

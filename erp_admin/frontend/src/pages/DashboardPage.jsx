@@ -4,92 +4,67 @@ import {
   CalendarToday, Assignment, Warning, ArrowForward,
 } from '@mui/icons-material';
 import {
-  Button, Chip, CircularProgress,
-  FormControl, InputLabel, Select, MenuItem, TextField, Alert,
+  Button, Chip, CircularProgress, Alert,
 } from '@mui/material';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, PieChart, Pie, Cell,
 } from 'recharts';
 import api from '../utils/api';
-import { formatCurrency } from '../utils/helpers';
-import { DEPARTMENTS, YEARS, STUDENT_STATUS, FEE_STATUS } from '../utils/constants';
+import { formatCurrency, formatDate } from '../utils/helpers';
 import { useAuth } from '../context/AuthContext';
 import AdminManagement from '../components/common/AdminManagement';
-import FormDialog from '../components/common/FormDialog';
 
 const DEPT_COLORS = ['#4f46e5', '#06b6d4', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#ec4899', '#14b8a6'];
 
 const MONTH_NAMES = ['', 'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-const EMPTY_STUDENT_FORM = {
-  rollNo: '', name: '', email: '', phone: '', department: '', year: '',
-  status: STUDENT_STATUS.ACTIVE, feeStatus: FEE_STATUS.PENDING, cgpa: '',
-};
-
 export default function DashboardPage() {
   const { user } = useAuth();
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [addDialogOpen, setAddDialogOpen] = useState(false);
-  const [studentForm, setStudentForm] = useState(EMPTY_STUDENT_FORM);
-  const [addSaving, setAddSaving] = useState(false);
-  const [addError, setAddError] = useState('');
+  const [error, setError] = useState('');
   const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
 
-  const resetAddForm = () => {
-    setStudentForm(EMPTY_STUDENT_FORM);
-    setAddError('');
+  const handleGenerateReport = () => {
+    if (!stats) return;
+    const rows = [
+      ['Ayra ERP — Dashboard Report'],
+      ['Generated', new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })],
+      [],
+      ['Metric', 'Value'],
+      ['Total Students', stats.students.total],
+      ['Active Students', stats.students.active],
+      ['Active Faculty', stats.teachers.active],
+      ['Revenue Collected', stats.finance.collected],
+      ['Pending Dues', stats.finance.pending],
+      ['Collection Rate (%)', stats.finance.collectionRate],
+      [],
+      ['Department', 'Student Count'],
+      ...(stats.studentsByDepartment || []).map((d) => [d._id || 'Other', d.count]),
+      [],
+      ['Month', 'New Enrollments'],
+      ...(stats.monthlyEnrollment || []).map((m) => [`${m._id.year}-${String(m._id.month).padStart(2, '0')}`, m.count]),
+      [],
+      ['Upcoming Exams'],
+      ['Course', 'Date', 'Time', 'Venue', 'Type'],
+      ...(stats.upcomingExams || []).map((e) => [e.course?.name || 'Exam', formatDate(e.date), e.startTime, e.venue, e.examType]),
+    ];
+    const csv = rows.map((r) => r.map((c) => `"${String(c ?? '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `dashboard-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
   };
-
-  const openAddStudent = () => {
-    resetAddForm();
-    setAddDialogOpen(true);
-  };
-
-  const closeAddStudent = () => {
-    setAddDialogOpen(false);
-    setAddError('');
-  };
-
-  const handleAddStudent = async () => {
-    setAddSaving(true);
-    setAddError('');
-    const payload = {
-      rollNo: studentForm.rollNo,
-      name: studentForm.name,
-      email: studentForm.email,
-      phone: studentForm.phone,
-      department: studentForm.department,
-      year: studentForm.year,
-      status: studentForm.status,
-      feeStatus: studentForm.feeStatus,
-      cgpa: studentForm.cgpa ? Number(studentForm.cgpa) : 0,
-    };
-
-    if (!payload.rollNo || !payload.name || !payload.email || !payload.department || !payload.year) {
-      setAddError('Please fill in all required fields.');
-      setAddSaving(false);
-      return;
-    }
-
-    try {
-      await api.post('/students', payload);
-      closeAddStudent();
-      fetchDashboardStats();
-    } catch (error) {
-      setAddError(error.response?.data?.message || 'Failed to add student.');
-    } finally {
-      setAddSaving(false);
-    }
-  };
-
 
   const fetchDashboardStats = () => {
     setLoading(true);
     api.get('/dashboard/stats')
       .then(({ data }) => setStats(data.data))
-      .catch((err) => console.error(err))
+      .catch((err) => { console.error(err); setError('Failed to load dashboard stats.'); })
       .finally(() => setLoading(false));
   };
 
@@ -151,14 +126,13 @@ export default function DashboardPage() {
           </p>
         </div>
         <div className="flex gap-2.5">
-          <Button variant="outlined" size="small" startIcon={<Assignment />} sx={{ borderColor: '#e2e8f0', color: '#475569' }}>
+          <Button variant="outlined" size="small" startIcon={<Assignment />} onClick={handleGenerateReport} disabled={!stats} sx={{ borderColor: '#e2e8f0', color: '#475569' }}>
             Generate Report
-          </Button>
-          <Button variant="contained" size="small" startIcon={<People />} onClick={openAddStudent}>
-            Add Student
           </Button>
         </div>
       </div>
+
+      {error && <Alert severity="error" onClose={() => setError('')}>{error}</Alert>}
 
       {/* Stat Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
@@ -324,44 +298,6 @@ export default function DashboardPage() {
           <AdminManagement compact />
         </div>
       )}
-
-      <FormDialog
-        open={addDialogOpen}
-        onClose={closeAddStudent}
-        title="Quick Add Student"
-        subtitle="Capture the essentials from the dashboard without leaving your overview."
-        error={addError}
-        onPrimary={handleAddStudent}
-        primaryDisabled={addSaving || !studentForm.name || !studentForm.rollNo || !studentForm.email || !studentForm.department || !studentForm.year}
-        primaryLabel="Add Student"
-        loading={addSaving}
-      >
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <TextField label="Full Name" required value={studentForm.name} onChange={(e) => setStudentForm({ ...studentForm, name: e.target.value })} size="small" fullWidth />
-            <TextField label="Roll No." required value={studentForm.rollNo} onChange={(e) => setStudentForm({ ...studentForm, rollNo: e.target.value })} size="small" fullWidth />
-            <TextField label="Email" required value={studentForm.email} onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })} size="small" fullWidth />
-            <TextField label="Phone" value={studentForm.phone} onChange={(e) => setStudentForm({ ...studentForm, phone: e.target.value })} size="small" fullWidth />
-            <FormControl size="small" fullWidth>
-              <InputLabel>Department</InputLabel>
-              <Select label="Department" value={studentForm.department} onChange={(e) => setStudentForm({ ...studentForm, department: e.target.value })}>
-                {DEPARTMENTS.map((d) => <MenuItem key={d} value={d}>{d}</MenuItem>)}
-              </Select>
-            </FormControl>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Year</InputLabel>
-              <Select label="Year" value={studentForm.year} onChange={(e) => setStudentForm({ ...studentForm, year: e.target.value })}>
-                {YEARS.map((y) => <MenuItem key={y} value={y}>{y}</MenuItem>)}
-              </Select>
-            </FormControl>
-            <FormControl size="small" fullWidth>
-              <InputLabel>Status</InputLabel>
-              <Select label="Status" value={studentForm.status} onChange={(e) => setStudentForm({ ...studentForm, status: e.target.value })}>
-                {Object.values(STUDENT_STATUS).map((s) => <MenuItem key={s} value={s}>{s}</MenuItem>)}
-              </Select>
-            </FormControl>
-            <TextField label="CGPA" type="number" inputProps={{ min: 0, max: 10, step: 0.1 }} value={studentForm.cgpa} onChange={(e) => setStudentForm({ ...studentForm, cgpa: e.target.value })} size="small" fullWidth />
-          </div>
-      </FormDialog>
     </div>
   );
 }

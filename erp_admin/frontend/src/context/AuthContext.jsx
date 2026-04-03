@@ -22,8 +22,9 @@ export function AuthProvider({ children }) {
 
       localStorage.setItem('erp_access_token', accessToken);
       localStorage.setItem('erp_refresh_token', refreshToken);
-      localStorage.setItem('erp_admin_user', JSON.stringify(admin));
-      setUser(admin);
+      const userWithPortal = { ...admin, portal };
+      localStorage.setItem('erp_admin_user', JSON.stringify(userWithPortal));
+      setUser(userWithPortal);
       setLoginError('');
       return true;
     } catch (err) {

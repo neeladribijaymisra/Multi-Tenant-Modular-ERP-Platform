@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   Alert,
@@ -7,39 +7,54 @@ import {
   Button,
   Chip,
   CircularProgress,
+  Dialog,
+  DialogContent,
+  Divider,
   Drawer,
+  Fade,
   IconButton,
+  InputAdornment,
   Menu,
   MenuItem,
+  Select,
   TextField,
 } from '@mui/material';
 import {
   Add,
   ArrowOutward,
   Assessment,
+  AttachMoneyOutlined,
+  CalendarMonthOutlined,
+  CategoryOutlined,
   Close,
+  DescriptionOutlined,
   HelpOutline,
+  KeyboardArrowDown,
+  Lock,
+  Logout,
   Menu as MenuIcon,
   NotificationsNone,
   Paid,
   Payments,
+  Person,
+  Save,
   Search,
+  SwapHorizOutlined,
   TrendingDown,
   Wallet,
 } from '@mui/icons-material';
+import StudentFinancePage from './StudentFinancePage';
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts';
 import api from '../utils/api';
 import { useAuth } from '../context/AuthContext';
 import { formatCurrency, formatDate } from '../utils/helpers';
-import FormDialog from '../components/common/FormDialog';
 
 const financeNavItems = [
-  { label: 'Dashboard', path: '/dashboard' },
-  { label: 'Students', path: '/students' },
-  { label: 'Finance', path: '/finance' },
+  { label: 'Finance Overview', path: 'overview' },
+  { label: 'Students', path: 'students' },
+  { label: 'Settings', path: 'settings' },
   { label: 'Payroll', path: null },
   { label: 'Management', path: null },
-  { label: 'Settings', path: '/settings' },
 ];
 
 const notifications = [
@@ -73,15 +88,23 @@ const statusStyles = {
 
 const categoryPalette = ['#0f766e', '#2563eb', '#ca8a04', '#9333ea'];
 
-function SidebarContent({ onClose, onGenerateReport }) {
-  const navigate = useNavigate();
-  const location = useLocation();
+const fieldSx = {
+  '& .MuiOutlinedInput-root': {
+    borderRadius: '18px',
+    backgroundColor: '#fcfdff',
+    transition: 'all 0.22s ease',
+    boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.7)',
+    '& fieldset': { borderColor: 'rgba(203,213,225,0.95)' },
+    '&:hover': { backgroundColor: '#ffffff', boxShadow: '0 12px 28px rgba(15,23,42,0.05)' },
+    '&:hover fieldset': { borderColor: '#94a3b8' },
+    '&.Mui-focused': { backgroundColor: '#ffffff', boxShadow: '0 0 0 4px rgba(37,99,235,0.12)' },
+    '&.Mui-focused fieldset': { borderColor: '#2563eb', borderWidth: 1 },
+  },
+  '& .MuiInputBase-input': { py: 1.65 },
+  '& .MuiSelect-select': { py: '13px !important' },
+};
 
-  const handleNavigate = (item) => {
-    if (item.path) navigate(item.path);
-    if (onClose) onClose();
-  };
-
+function SidebarContent({ onClose, onGenerateReport, activeView, onViewChange }) {
   return (
     <div className="font-finance-body flex h-full flex-col bg-[#f6f7fb] text-slate-900">
       <div className="border-b border-slate-200 px-6 py-6">
@@ -102,12 +125,14 @@ function SidebarContent({ onClose, onGenerateReport }) {
       <div className="flex-1 overflow-y-auto px-4 py-6">
         <div className="space-y-2">
           {financeNavItems.map((item) => {
-            const active = item.path ? location.pathname === item.path : item.label === 'Finance';
+            const active = item.path === activeView;
             return (
               <button
                 key={item.label}
                 type="button"
-                onClick={() => handleNavigate(item)}
+                onClick={() => {
+                  if (item.path) { onViewChange(item.path); if (onClose) onClose(); }
+                }}
                 className={`finance-nav-link w-full justify-between ${active ? 'active' : ''} ${item.path ? '' : 'opacity-80'}`}
               >
                 <span>{item.label}</span>
@@ -167,12 +192,15 @@ function MetricCard({ icon, title, value, subline, accent, trend }) {
 
 export default function FinancePage() {
   const navigate = useNavigate();
-  const { user } = useAuth();
+  const { user, logout, updateUser } = useAuth();
 
+  const [view, setView] = useState('overview');
   const [mobileOpen, setMobileOpen] = useState(false);
   const [notifAnchor, setNotifAnchor] = useState(null);
   const [helpAnchor, setHelpAnchor] = useState(null);
+  const [userAnchor, setUserAnchor] = useState(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+  // overview state
   const [overview, setOverview] = useState(null);
   const [transactions, setTransactions] = useState([]);
   const [search, setSearch] = useState('');
@@ -182,6 +210,19 @@ export default function FinancePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [form, setForm] = useState(defaultForm);
+  // students state
+  const [students, setStudents] = useState([]);
+  const [studentSearch, setStudentSearch] = useState('');
+  const [studentLoading, setStudentLoading] = useState(false);
+  // settings state
+  const [profileForm, setProfileForm] = useState({ name: user?.name || '', email: user?.email || '', phone: user?.phone || '' });
+  const [profileSaving, setProfileSaving] = useState(false);
+  const [profileSuccess, setProfileSuccess] = useState('');
+  const [profileError, setProfileError] = useState('');
+  const [pwForm, setPwForm] = useState({ currentPassword: '', newPassword: '', confirmPassword: '' });
+  const [pwSaving, setPwSaving] = useState(false);
+  const [pwSuccess, setPwSuccess] = useState('');
+  const [pwError, setPwError] = useState('');
 
   const loadOverview = async () => {
     const { data } = await api.get('/finance/overview');
@@ -228,6 +269,44 @@ export default function FinancePage() {
 
     return () => clearTimeout(timeoutId);
   }, [search, tableLimit]);
+
+  const loadStudents = useCallback(async (q = '') => {
+    setStudentLoading(true);
+    try {
+      const { data } = await api.get('/students', { params: { search: q, limit: 50 } });
+      setStudents(data.data.students);
+    } catch { /* silent */ } finally { setStudentLoading(false); }
+  }, []);
+
+  useEffect(() => {
+    if (view === 'students') loadStudents(studentSearch);
+  }, [view, loadStudents]);
+
+  useEffect(() => {
+    const t = setTimeout(() => { if (view === 'students') loadStudents(studentSearch); }, 300);
+    return () => clearTimeout(t);
+  }, [studentSearch]);
+
+  const handleProfileSave = async () => {
+    setProfileSaving(true); setProfileError(''); setProfileSuccess('');
+    try {
+      const { data } = await api.put('/auth/profile', profileForm);
+      updateUser(data.data.admin);
+      setProfileSuccess('Profile updated successfully.');
+    } catch (err) { setProfileError(err.response?.data?.message || 'Failed to update profile.'); }
+    finally { setProfileSaving(false); }
+  };
+
+  const handlePasswordSave = async () => {
+    if (pwForm.newPassword !== pwForm.confirmPassword) { setPwError('Passwords do not match.'); return; }
+    setPwSaving(true); setPwError(''); setPwSuccess('');
+    try {
+      await api.put('/auth/change-password', { currentPassword: pwForm.currentPassword, newPassword: pwForm.newPassword });
+      setPwSuccess('Password updated successfully.');
+      setPwForm({ currentPassword: '', newPassword: '', confirmPassword: '' });
+    } catch (err) { setPwError(err.response?.data?.message || 'Failed to update password.'); }
+    finally { setPwSaving(false); }
+  };
 
   const handleGenerateReport = () => {
     const csvRows = [
@@ -319,6 +398,190 @@ export default function FinancePage() {
     ];
   }, [overview]);
 
+  // Master admin: render just the overview content inline (AdminLayout provides the shell)
+  if (user?.portal !== 'accounts') {
+    if (loading) {
+      return (
+        <div className="flex items-center justify-center h-64">
+          <CircularProgress size={26} />
+        </div>
+      );
+    }
+    return (
+      <div className="finance-page">
+        {error ? <Alert sx={{ mb: 3 }} severity="error" onClose={() => setError('')}>{error}</Alert> : null}
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between animate-fadeInUp">
+          <div>
+            <h1 className="finance-page-title text-[2.5rem]">Finance</h1>
+            <p className="text-slate-500 text-sm mt-0.5">Reporting period: {overview?.reportingPeriod || 'June 2024 - Present'}</p>
+          </div>
+          <div className="flex flex-col gap-3 sm:flex-row">
+            <Button variant="outlined" startIcon={<Assessment />} onClick={handleGenerateReport}
+              sx={{ borderColor: '#e2e8f0', color: '#475569', borderRadius: '14px' }}>
+              Generate Report
+            </Button>
+            <Button variant="contained" startIcon={<Add />} onClick={() => setDialogOpen(true)}
+              sx={{ bgcolor: '#0f172a', borderRadius: '14px', '&:hover': { bgcolor: '#1e293b' } }}>
+              Add Transaction
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 animate-fadeInUp">
+          {filteredSummary.map((item) => <MetricCard key={item.title} {...item} />)}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 animate-fadeInUp">
+          <div className="lg:col-span-2 finance-card p-6">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between mb-6">
+              <div>
+                <h3 className="font-heading font-600 text-slate-900 text-base">Revenue vs. Expenses</h3>
+                <p className="text-xs text-slate-400 mt-0.5">Monthly comparison Jan–Jun</p>
+              </div>
+              <div className="flex items-center gap-4 text-sm font-semibold text-slate-500">
+                <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-[#2563eb]" />Revenue</div>
+                <div className="flex items-center gap-2"><span className="h-3 w-3 rounded-full bg-[#f59e0b]" />Expenses</div>
+              </div>
+            </div>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={chartData} barGap={10}>
+                <CartesianGrid stroke="#e2e8f0" strokeDasharray="4 4" vertical={false} />
+                <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <YAxis axisLine={false} tickLine={false} tick={{ fill: '#64748b', fontSize: 12 }} />
+                <Tooltip cursor={{ fill: 'rgba(148,163,184,0.08)' }} contentStyle={{ borderRadius: 14, borderColor: '#e2e8f0' }} formatter={(v) => [`${v} L`, 'Amount']} />
+                <Bar dataKey="revenue" radius={[10, 10, 0, 0]} fill="#2563eb" maxBarSize={30} />
+                <Bar dataKey="expenses" radius={[10, 10, 0, 0]} fill="#f59e0b" maxBarSize={30} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="finance-card p-6">
+            <h3 className="font-heading font-600 text-slate-900 text-base mb-1">Budget Allocation</h3>
+            <p className="text-xs text-slate-400 mb-5">Variance tracking</p>
+            <div className="space-y-4">
+              {budgetAllocation.map((item, i) => (
+                <div key={item.name}>
+                  <div className="flex items-center justify-between gap-2 mb-2">
+                    <p className="text-sm font-semibold text-slate-800">{item.name}</p>
+                    <p className="font-heading text-sm font-700 text-slate-950">{item.percent}%</p>
+                  </div>
+                  <div className="h-2.5 overflow-hidden rounded-full bg-slate-100">
+                    <div className="h-full rounded-full transition-all duration-500" style={{ width: `${item.percent}%`, backgroundColor: categoryPalette[i % categoryPalette.length] }} />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+
+        <div className="finance-card overflow-hidden animate-fadeInUp">
+          <div className="flex flex-col gap-4 border-b border-slate-200 px-6 py-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="font-heading font-600 text-slate-900 text-base">Recent Transactions</h3>
+              <p className="text-xs text-slate-400 mt-0.5">Income, expense, and status visibility</p>
+            </div>
+            <Button variant="text" endIcon={<ArrowOutward />} onClick={() => setTableLimit((c) => (c === 8 ? 24 : 8))} sx={{ color: '#0f172a', fontWeight: 700 }}>
+              {tableLimit === 8 ? 'View All' : 'Show Recent'}
+            </Button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full">
+              <thead className="bg-slate-50">
+                <tr>{['Date', 'Description', 'Category', 'Amount', 'Status'].map((c) => (
+                  <th key={c} className="px-6 py-4 text-left text-xs font-bold uppercase tracking-[0.25em] text-slate-400">{c}</th>
+                ))}</tr>
+              </thead>
+              <tbody>
+                {tableLoading ? (
+                  <tr><td colSpan={5} className="px-6 py-12 text-center"><CircularProgress size={22} /></td></tr>
+                ) : transactions.length === 0 ? (
+                  <tr><td colSpan={5} className="px-6 py-12 text-center text-sm text-slate-400">No transactions found.</td></tr>
+                ) : transactions.map((t) => (
+                  <tr key={t.id} className="border-t border-slate-100 transition hover:bg-slate-50/80">
+                    <td className="px-6 py-4 text-sm font-medium text-slate-700">{formatDate(t.date)}</td>
+                    <td className="px-6 py-4">
+                      <p className="text-sm font-semibold text-slate-900">{t.description}</p>
+                      <p className="mt-0.5 text-xs text-slate-500">{t.details || t.reference || '—'}</p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <Chip label={t.category} size="small" sx={{ bgcolor: '#eef2ff', color: '#3730a3', fontWeight: 700, borderRadius: '999px' }} />
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className={`font-heading text-base font-700 ${t.type === 'income' ? 'text-emerald-600' : 'text-rose-600'}`}>
+                        {t.type === 'income' ? '+' : '-'}{formatCurrency(t.amount)}
+                      </p>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex rounded-full border px-3 py-1 text-xs font-bold ${statusStyles[t.status] || 'bg-slate-100 text-slate-600 border-slate-200'}`}>{t.status}</span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Add Transaction Dialog */}
+        <Dialog open={dialogOpen} onClose={(_, r) => { if (r !== 'backdropClick') { setDialogOpen(false); setForm(defaultForm); } }}
+          fullWidth maxWidth={false}
+          BackdropProps={{ timeout: 240, sx: { backgroundColor: 'rgba(15,23,42,0.34)', backdropFilter: 'blur(10px)' } }}
+          PaperProps={{ sx: { width: '100%', maxWidth: '58rem', borderRadius: '22px', overflow: 'hidden', backgroundImage: 'none', backgroundColor: '#f8fafc', border: '1px solid rgba(226,232,240,0.95)', boxShadow: '0 34px 90px rgba(15,23,42,0.18)' } }}
+        >
+          <DialogContent sx={{ p: { xs: 3, sm: 4.5 } }}>
+            <div style={{ position: 'relative' }}>
+              <IconButton onClick={() => { setDialogOpen(false); setForm(defaultForm); }}
+                sx={{ position: 'absolute', top: 0, right: 0, border: '1px solid rgba(226,232,240,0.95)', bgcolor: 'rgba(255,255,255,0.92)', color: '#64748b', '&:hover': { bgcolor: '#fff' } }}>
+                <Close fontSize="small" />
+              </IconButton>
+              <Fade in={dialogOpen} timeout={320}>
+                <div style={{ paddingTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                  <div style={{ width: 72, height: 72, borderRadius: 20, background: 'linear-gradient(135deg,#1d4ed8 0%,#0f172a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 16px 36px rgba(15,23,42,0.18)' }}>
+                    <Add sx={{ color: '#fff', fontSize: 32 }} />
+                  </div>
+                  <p style={{ marginTop: 16, fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>New Transaction</p>
+                  <div style={{ marginTop: 16 }}>
+                    <h2 style={{ fontFamily: '"Manrope",sans-serif', fontWeight: 800, fontSize: '1.75rem', color: '#020617', letterSpacing: '-0.03em', margin: 0 }}>Add New Transaction</h2>
+                    <p style={{ marginTop: 8, fontSize: '0.9rem', lineHeight: 1.7, color: '#64748b' }}>Record an income or expense entry.</p>
+                  </div>
+                </div>
+              </Fade>
+              {error ? <Alert severity="error" sx={{ mt: 3 }}>{error}</Alert> : null}
+              <div style={{ marginTop: 24, borderRadius: 24, border: '1px solid rgba(226,232,240,0.92)', backgroundColor: 'rgba(255,255,255,0.92)', boxShadow: '0 18px 45px rgba(15,23,42,0.06)', padding: '28px' }}>
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                  <TextField label="Transaction Date" type="date" size="small" InputLabelProps={{ shrink: true }} value={form.date} onChange={(e) => setForm((c) => ({ ...c, date: e.target.value }))} sx={fieldSx} InputProps={{ startAdornment: <InputAdornment position="start"><CalendarMonthOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }} />
+                  <TextField label="Reference" size="small" value={form.reference} onChange={(e) => setForm((c) => ({ ...c, reference: e.target.value }))} sx={fieldSx} InputProps={{ startAdornment: <InputAdornment position="start"><DescriptionOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }} />
+                  <TextField label="Description" size="small" required value={form.description} onChange={(e) => setForm((c) => ({ ...c, description: e.target.value }))} sx={{ ...fieldSx, gridColumn: 'span 2' }} InputProps={{ startAdornment: <InputAdornment position="start"><DescriptionOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }} />
+                  <TextField label="Details" size="small" value={form.details} onChange={(e) => setForm((c) => ({ ...c, details: e.target.value }))} sx={{ ...fieldSx, gridColumn: 'span 2' }} InputProps={{ startAdornment: <InputAdornment position="start"><DescriptionOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }} />
+                  <TextField select label="Category" size="small" value={form.category} onChange={(e) => setForm((c) => ({ ...c, category: e.target.value }))} sx={fieldSx} InputProps={{ startAdornment: <InputAdornment position="start"><CategoryOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }}>
+                    {['Tuition','Salary','Maintenance','Research','Administration','Payroll','Vendor Payment','Grant','Scholarship','Other'].map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                  </TextField>
+                  <TextField select label="Type" size="small" value={form.type} onChange={(e) => setForm((c) => ({ ...c, type: e.target.value }))} sx={fieldSx} InputProps={{ startAdornment: <InputAdornment position="start"><SwapHorizOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }}>
+                    <MenuItem value="income">Income</MenuItem>
+                    <MenuItem value="expense">Expense</MenuItem>
+                  </TextField>
+                  <TextField label="Amount" size="small" type="number" required value={form.amount} onChange={(e) => setForm((c) => ({ ...c, amount: e.target.value }))} sx={fieldSx} InputProps={{ startAdornment: <InputAdornment position="start"><AttachMoneyOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }} />
+                  <TextField label="Entity Count" size="small" type="number" value={form.entityCount} onChange={(e) => setForm((c) => ({ ...c, entityCount: e.target.value }))} sx={fieldSx} InputProps={{ startAdornment: <InputAdornment position="start"><CategoryOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }} />
+                  <TextField select label="Status" size="small" value={form.status} onChange={(e) => setForm((c) => ({ ...c, status: e.target.value }))} sx={{ ...fieldSx, gridColumn: 'span 2' }}>
+                    <MenuItem value="Completed">Completed</MenuItem>
+                    <MenuItem value="Pending">Pending</MenuItem>
+                  </TextField>
+                </div>
+              </div>
+              <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+                <Button onClick={() => { setDialogOpen(false); setForm(defaultForm); }} variant="outlined" sx={{ borderRadius: '14px', px: 3, py: 1.2, borderColor: '#cbd5e1', color: '#475569', textTransform: 'none', fontWeight: 700 }}>Cancel</Button>
+                <Button onClick={handleSaveTransaction} disabled={saving || !form.description || !form.amount} variant="contained"
+                  sx={{ borderRadius: '14px', px: 3.2, py: 1.25, textTransform: 'none', fontWeight: 800, background: 'linear-gradient(135deg,#1d4ed8 0%,#0f172a 100%)', boxShadow: '0 14px 28px rgba(29,78,216,0.24)', '&:hover': { background: 'linear-gradient(135deg,#1e40af 0%,#0f172a 100%)', transform: 'translateY(-1px)' }, '&:disabled': { background: '#e2e8f0', color: '#94a3b8', boxShadow: 'none' } }}>
+                  {saving ? 'Saving...' : 'Save Transaction'}
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    );
+  }
+
+  // Accounts portal: full Finance workspace with its own sidebar/header/nav
   if (loading) {
     return (
       <div className="font-finance-body flex h-screen items-center justify-center bg-[#eef1f6]">
@@ -337,12 +600,12 @@ export default function FinancePage() {
     <div className="font-finance-body flex h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,_rgba(37,99,235,0.08),_transparent_32%),linear-gradient(180deg,#eef2ff_0%,#f8fafc_38%,#eef1f5_100%)] text-slate-900">
       <aside className="hidden w-[290px] flex-shrink-0 border-r border-white/60 bg-[#f6f7fb]/95 lg:flex">
         <div className="fixed flex h-screen w-[290px] flex-col">
-          <SidebarContent onGenerateReport={handleGenerateReport} />
+          <SidebarContent onGenerateReport={handleGenerateReport} activeView={view} onViewChange={setView} />
         </div>
       </aside>
 
       <Drawer open={mobileOpen} onClose={() => setMobileOpen(false)} PaperProps={{ sx: { width: 290 } }}>
-        <SidebarContent onClose={() => setMobileOpen(false)} onGenerateReport={handleGenerateReport} />
+        <SidebarContent onClose={() => setMobileOpen(false)} onGenerateReport={handleGenerateReport} activeView={view} onViewChange={setView} />
       </Drawer>
 
       <div className="flex min-w-0 flex-1 flex-col">
@@ -387,7 +650,7 @@ export default function FinancePage() {
               <button
                 type="button"
                 className="flex items-center gap-3 rounded-2xl border border-slate-200 bg-white px-3 py-2.5 transition hover:border-slate-300 hover:shadow-sm"
-                onClick={() => navigate('/settings')}
+                onClick={(e) => setUserAnchor(e.currentTarget)}
               >
                 <Avatar sx={{ width: 36, height: 36, bgcolor: '#0f172a', fontWeight: 700 }}>
                   {user?.name?.charAt(0) || 'A'}
@@ -396,12 +659,17 @@ export default function FinancePage() {
                   <p className="text-sm font-semibold text-slate-800">{user?.name || 'Finance Admin'}</p>
                   <p className="text-xs text-slate-400">{user?.role || 'finance-office'}</p>
                 </div>
+                <KeyboardArrowDown sx={{ fontSize: 16, color: '#94a3b8' }} />
               </button>
             </div>
           </div>
         </header>
 
         <main className="min-h-0 flex-1 overflow-y-auto px-4 py-5 lg:px-8 lg:py-8">
+          {view === 'students' && <StudentFinancePage />}
+
+          {view === 'overview' && (
+            <>
           {error ? <Alert sx={{ mb: 3 }} severity="error" onClose={() => setError('')}>{error}</Alert> : null}
 
           <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
@@ -597,6 +865,8 @@ export default function FinancePage() {
               </table>
             </div>
           </section>
+            </>
+          )}
         </main>
       </div>
 
@@ -685,94 +955,161 @@ export default function FinancePage() {
         ))}
       </Menu>
 
-      <FormDialog
-        open={dialogOpen}
-        onClose={() => setDialogOpen(false)}
-        title="Add New Transaction"
-        subtitle="Record an income or expense entry for the finance overview and transactions table."
-        onPrimary={handleSaveTransaction}
-        primaryLabel="Save Transaction"
-        primaryDisabled={saving || !form.description || !form.amount}
-        loading={saving}
-        error={error}
+      <Menu
+        anchorEl={userAnchor}
+        open={Boolean(userAnchor)}
+        onClose={() => setUserAnchor(null)}
+        PaperProps={{ sx: { width: 220, borderRadius: '16px', mt: 1.5, boxShadow: '0 12px 40px rgba(15,23,42,0.14)', border: '1px solid #e2e8f0' } }}
+        transformOrigin={{ horizontal: 'right', vertical: 'top' }}
+        anchorOrigin={{ horizontal: 'right', vertical: 'bottom' }}
       >
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          <TextField
-            label="Transaction Date"
-            type="date"
-            size="small"
-            InputLabelProps={{ shrink: true }}
-            value={form.date}
-            onChange={(event) => setForm((current) => ({ ...current, date: event.target.value }))}
-          />
-          <TextField
-            label="Reference"
-            size="small"
-            value={form.reference}
-            onChange={(event) => setForm((current) => ({ ...current, reference: event.target.value }))}
-          />
-          <TextField
-            label="Description"
-            size="small"
-            value={form.description}
-            onChange={(event) => setForm((current) => ({ ...current, description: event.target.value }))}
-            sx={{ gridColumn: { sm: 'span 2' } }}
-          />
-          <TextField
-            label="Details"
-            size="small"
-            value={form.details}
-            onChange={(event) => setForm((current) => ({ ...current, details: event.target.value }))}
-            sx={{ gridColumn: { sm: 'span 2' } }}
-          />
-          <TextField
-            select
-            label="Category"
-            size="small"
-            value={form.category}
-            onChange={(event) => setForm((current) => ({ ...current, category: event.target.value }))}
-          >
-            {['Tuition', 'Salary', 'Maintenance', 'Research', 'Administration', 'Payroll', 'Vendor Payment', 'Grant', 'Scholarship', 'Other'].map((option) => (
-              <MenuItem key={option} value={option}>{option}</MenuItem>
-            ))}
-          </TextField>
-          <TextField
-            select
-            label="Type"
-            size="small"
-            value={form.type}
-            onChange={(event) => setForm((current) => ({ ...current, type: event.target.value }))}
-          >
-            <MenuItem value="income">Income</MenuItem>
-            <MenuItem value="expense">Expense</MenuItem>
-          </TextField>
-          <TextField
-            label="Amount"
-            size="small"
-            type="number"
-            value={form.amount}
-            onChange={(event) => setForm((current) => ({ ...current, amount: event.target.value }))}
-          />
-          <TextField
-            label="Entity Count"
-            size="small"
-            type="number"
-            value={form.entityCount}
-            onChange={(event) => setForm((current) => ({ ...current, entityCount: event.target.value }))}
-          />
-          <TextField
-            select
-            label="Status"
-            size="small"
-            value={form.status}
-            onChange={(event) => setForm((current) => ({ ...current, status: event.target.value }))}
-            sx={{ gridColumn: { sm: 'span 2' } }}
-          >
-            <MenuItem value="Completed">Completed</MenuItem>
-            <MenuItem value="Pending">Pending</MenuItem>
-          </TextField>
+        <div className="px-3 py-3 border-b border-slate-100">
+          <p className="text-sm font-semibold text-slate-900">{user?.name || 'Finance Admin'}</p>
+          <p className="text-xs text-slate-400 mt-0.5">{user?.email || ''}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5 capitalize">{user?.department || 'Accounts'} · {user?.role || 'admin'}</p>
         </div>
-      </FormDialog>
+        <div className="py-1">
+          <MenuItem
+            onClick={() => { setUserAnchor(null); logout(); }}
+            sx={{ color: '#ef4444', borderRadius: '10px', mx: 0.5, my: 0.5, '&:hover': { bgcolor: '#fef2f2' } }}
+          >
+            <Logout sx={{ fontSize: 17, mr: 1.5 }} />
+            <span className="text-sm font-semibold">Sign out</span>
+          </MenuItem>
+        </div>
+      </Menu>
+
+      {/* Add Transaction Dialog */}
+      <Dialog
+        open={dialogOpen}
+        onClose={(_, reason) => { if (reason !== 'backdropClick') { setDialogOpen(false); setForm(defaultForm); } }}
+        fullWidth
+        maxWidth={false}
+        BackdropProps={{ timeout: 240, sx: { backgroundColor: 'rgba(15,23,42,0.34)', backdropFilter: 'blur(10px)' } }}
+        PaperProps={{
+          sx: {
+            width: '100%',
+            maxWidth: '58rem',
+            borderRadius: '22px',
+            overflow: 'hidden',
+            backgroundImage: 'none',
+            backgroundColor: '#f8fafc',
+            border: '1px solid rgba(226,232,240,0.95)',
+            boxShadow: '0 34px 90px rgba(15,23,42,0.18)',
+          },
+        }}
+      >
+        <DialogContent sx={{ p: { xs: 3, sm: 4.5 } }}>
+          <div style={{ position: 'relative' }}>
+            <IconButton
+              onClick={() => { setDialogOpen(false); setForm(defaultForm); }}
+              sx={{ position: 'absolute', top: 0, right: 0, border: '1px solid rgba(226,232,240,0.95)', bgcolor: 'rgba(255,255,255,0.92)', color: '#64748b', '&:hover': { bgcolor: '#fff', color: '#334155' } }}
+            >
+              <Close fontSize="small" />
+            </IconButton>
+
+            <Fade in={dialogOpen} timeout={320}>
+              <div style={{ paddingTop: 8, display: 'flex', flexDirection: 'column', alignItems: 'center', textAlign: 'center' }}>
+                <div style={{ width: 72, height: 72, borderRadius: 20, background: 'linear-gradient(135deg,#1d4ed8 0%,#0f172a 100%)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 16px 36px rgba(15,23,42,0.18)' }}>
+                  <Add sx={{ color: '#fff', fontSize: 32 }} />
+                </div>
+                <p style={{ marginTop: 16, fontSize: '0.95rem', fontWeight: 700, color: '#0f172a' }}>New Transaction</p>
+                <p style={{ marginTop: 4, fontSize: '0.8rem', color: '#64748b' }}>Record income or expense</p>
+                <div style={{ marginTop: 20 }}>
+                  <h2 style={{ fontFamily: '"Manrope",sans-serif', fontWeight: 800, fontSize: '1.85rem', color: '#020617', letterSpacing: '-0.03em', margin: 0 }}>Add New Transaction</h2>
+                  <p style={{ marginTop: 8, fontSize: '0.95rem', lineHeight: 1.7, color: '#64748b' }}>Record an income or expense entry for the finance overview and transactions table.</p>
+                </div>
+              </div>
+            </Fade>
+
+            {error ? <Alert severity="error" sx={{ mt: 3 }}>{error}</Alert> : null}
+
+            <div style={{ marginTop: 24, borderRadius: 24, border: '1px solid rgba(226,232,240,0.92)', backgroundColor: 'rgba(255,255,255,0.92)', boxShadow: '0 18px 45px rgba(15,23,42,0.06)', padding: '28px' }}>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <TextField
+                  label="Transaction Date" type="date" size="small" InputLabelProps={{ shrink: true }}
+                  value={form.date} onChange={(e) => setForm((c) => ({ ...c, date: e.target.value }))}
+                  sx={fieldSx}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><CalendarMonthOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }}
+                />
+                <TextField
+                  label="Reference" size="small"
+                  value={form.reference} onChange={(e) => setForm((c) => ({ ...c, reference: e.target.value }))}
+                  sx={fieldSx}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><DescriptionOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }}
+                />
+                <TextField
+                  label="Description" size="small" required
+                  value={form.description} onChange={(e) => setForm((c) => ({ ...c, description: e.target.value }))}
+                  sx={{ ...fieldSx, gridColumn: 'span 2' }}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><DescriptionOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }}
+                />
+                <TextField
+                  label="Details" size="small"
+                  value={form.details} onChange={(e) => setForm((c) => ({ ...c, details: e.target.value }))}
+                  sx={{ ...fieldSx, gridColumn: 'span 2' }}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><DescriptionOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }}
+                />
+                <TextField
+                  select label="Category" size="small"
+                  value={form.category} onChange={(e) => setForm((c) => ({ ...c, category: e.target.value }))}
+                  sx={fieldSx}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><CategoryOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }}
+                >
+                  {['Tuition','Salary','Maintenance','Research','Administration','Payroll','Vendor Payment','Grant','Scholarship','Other'].map((o) => <MenuItem key={o} value={o}>{o}</MenuItem>)}
+                </TextField>
+                <TextField
+                  select label="Type" size="small"
+                  value={form.type} onChange={(e) => setForm((c) => ({ ...c, type: e.target.value }))}
+                  sx={fieldSx}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><SwapHorizOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }}
+                >
+                  <MenuItem value="income">Income</MenuItem>
+                  <MenuItem value="expense">Expense</MenuItem>
+                </TextField>
+                <TextField
+                  label="Amount" size="small" type="number" required
+                  value={form.amount} onChange={(e) => setForm((c) => ({ ...c, amount: e.target.value }))}
+                  sx={fieldSx}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><AttachMoneyOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }}
+                />
+                <TextField
+                  label="Entity Count" size="small" type="number"
+                  value={form.entityCount} onChange={(e) => setForm((c) => ({ ...c, entityCount: e.target.value }))}
+                  sx={fieldSx}
+                  InputProps={{ startAdornment: <InputAdornment position="start"><CategoryOutlined sx={{ color: '#94a3b8', fontSize: 19 }} /></InputAdornment> }}
+                />
+                <TextField
+                  select label="Status" size="small"
+                  value={form.status} onChange={(e) => setForm((c) => ({ ...c, status: e.target.value }))}
+                  sx={{ ...fieldSx, gridColumn: 'span 2' }}
+                >
+                  <MenuItem value="Completed">Completed</MenuItem>
+                  <MenuItem value="Pending">Pending</MenuItem>
+                </TextField>
+              </div>
+            </div>
+
+            <div style={{ marginTop: 24, display: 'flex', justifyContent: 'flex-end', gap: 12 }}>
+              <Button
+                onClick={() => { setDialogOpen(false); setForm(defaultForm); }}
+                variant="outlined"
+                sx={{ borderRadius: '14px', px: 3, py: 1.2, borderColor: '#cbd5e1', color: '#475569', textTransform: 'none', fontWeight: 700, '&:hover': { borderColor: '#94a3b8', backgroundColor: '#fff' } }}
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveTransaction}
+                disabled={saving || !form.description || !form.amount}
+                variant="contained"
+                sx={{ borderRadius: '14px', px: 3.2, py: 1.25, textTransform: 'none', fontWeight: 800, background: 'linear-gradient(135deg,#1d4ed8 0%,#0f172a 100%)', boxShadow: '0 14px 28px rgba(29,78,216,0.24)', '&:hover': { background: 'linear-gradient(135deg,#1e40af 0%,#0f172a 100%)', transform: 'translateY(-1px)', boxShadow: '0 18px 34px rgba(29,78,216,0.28)' }, '&:disabled': { background: '#e2e8f0', color: '#94a3b8', boxShadow: 'none' } }}
+              >
+                {saving ? 'Saving...' : 'Save Transaction'}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
