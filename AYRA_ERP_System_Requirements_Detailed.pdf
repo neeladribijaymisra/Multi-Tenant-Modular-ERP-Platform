@@ -1,0 +1,593 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R 5 0 R 7 0 R 9 0 R 11 0 R 13 0 R] /Count 6 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 936] /Contents 4 0 R /Resources << /Font << /F1 15 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 2772 >>
+stream
+BT
+/F1 13 Tf
+48 810 Td
+(AYRA ERP SYSTEM REQUIREMENTS SPECIFICATION) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(Project Title: AYRA ERP Portal) Tj
+0 -16 Td
+(Document Type: Detailed System Requirements Document) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(1. INTRODUCTION) Tj
+0 -16 Td
+(AYRA ERP is a web-based enterprise resource planning platform developed for academic institutions.) Tj
+0 -16 Td
+(It supports daily university and college operations through separate role-based dashboards for) Tj
+0 -16 Td
+(students, teachers, academic office staff, and communication teams. The project centralizes) Tj
+0 -16 Td
+(academic data, student management, scheduling, communication, and alert broadcasting in a single) Tj
+0 -16 Td
+(integrated system.) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(2. PROJECT PURPOSE) Tj
+0 -16 Td
+(The main purpose of this project is to reduce manual academic administration work and provide a) Tj
+0 -16 Td
+(central digital system where all major academic and operational workflows can be managed from one) Tj
+0 -16 Td
+(place. The system improves visibility, data accuracy, access control, and communication speed.) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(3. PROJECT OBJECTIVES) Tj
+0 -16 Td
+(- To provide role-based access for different categories of institutional users.) Tj
+0 -16 Td
+(- To manage student records, subject lists, timetables, progress, and advisory communication.) Tj
+0 -16 Td
+(- To help teachers and academic office staff coordinate academic operations efficiently.) Tj
+0 -16 Td
+(- To provide structured leave request and approval workflows.) Tj
+0 -16 Td
+(- To support alert-based communication using email delivery through Nodemailer.) Tj
+0 -16 Td
+(- To maintain all major ERP records in MongoDB for persistence and retrieval.) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(4. SYSTEM SCOPE) Tj
+0 -16 Td
+(The AYRA ERP system covers the following scope areas:) Tj
+0 -16 Td
+(- Student self-service dashboard access) Tj
+0 -16 Td
+(- Teacher academic operations and student management) Tj
+0 -16 Td
+(- Academic office administration and oversight) Tj
+0 -16 Td
+(- Communication management for notices, campaigns, and events) Tj
+0 -16 Td
+(- Calendar and timetable visibility) Tj
+0 -16 Td
+(- Leave request workflow) Tj
+0 -16 Td
+(- Email alert creation, targeting, delivery, and history tracking) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(5. USER ROLES) Tj
+0 -16 Td
+(5.1 Student) Tj
+0 -16 Td
+(- View own profile details) Tj
+0 -16 Td
+(- View subject list and class timings) Tj
+0 -16 Td
+(- View teacher advisories and alerts) Tj
+0 -16 Td
+(- Track semester progress, attendance, marks, and remarks) Tj
+0 -16 Td
+(- View academic calendar events) Tj
+0 -16 Td
+(- Apply for leave and track approval or rejection status) Tj
+0 -16 Td
+(- Upload and remove profile image in dashboard profile area) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(5.2 Teacher) Tj
+ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 936] /Contents 6 0 R /Resources << /Font << /F1 15 0 R >> >> >>
+endobj
+6 0 obj
+<< /Length 2635 >>
+stream
+BT
+/F1 13 Tf
+48 810 Td
+(- Add, edit, and delete student records) Tj
+0 -16 Td
+(- Maintain student emails for communication use) Tj
+0 -16 Td
+(- Create and manage subject lists) Tj
+0 -16 Td
+(- Create and manage class schedules and timings) Tj
+0 -16 Td
+(- Publish advisories for students) Tj
+0 -16 Td
+(- Update semester progress, marks, attendance, and remarks) Tj
+0 -16 Td
+(- Approve or reject leave requests) Tj
+0 -16 Td
+(- Send alerts by email to all students or selected groups) Tj
+0 -16 Td
+(- Review previously sent alert records from the dashboard) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(5.3 Academic Office) Tj
+0 -16 Td
+(- Add, edit, and delete teacher accounts) Tj
+0 -16 Td
+(- Generate teacher passwords) Tj
+0 -16 Td
+(- Maintain student registry visibility) Tj
+0 -16 Td
+(- Create and manage curriculum plans) Tj
+0 -16 Td
+(- Manage timetables and scheduling records) Tj
+0 -16 Td
+(- Manage academic approvals and records) Tj
+0 -16 Td
+(- Monitor leave requests) Tj
+0 -16 Td
+(- Send and review alert messages to students) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(5.4 Communication Team) Tj
+0 -16 Td
+(- Create and manage announcements) Tj
+0 -16 Td
+(- Maintain communication campaigns) Tj
+0 -16 Td
+(- Manage event records) Tj
+0 -16 Td
+(- Track response data, escalation counts, and notes) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(6. MAJOR FUNCTIONAL REQUIREMENTS) Tj
+0 -16 Td
+(6.1 Authentication and Session Management) Tj
+0 -16 Td
+(- The system shall support login for multiple roles.) Tj
+0 -16 Td
+(- The system shall use tenant-based route structure.) Tj
+0 -16 Td
+(- The system shall preserve authenticated session details in frontend context.) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(6.2 Student Information Management) Tj
+0 -16 Td
+(- The system shall store student ID, name, department, semester, section, email, phone, and status.) Tj
+0 -16 Td
+(- The system shall allow teacher-side CRUD operations for student data.) Tj
+0 -16 Td
+(- The system shall allow academic office review and update access for student registry data.) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(6.3 Academic Resources Management) Tj
+0 -16 Td
+(- The system shall manage subject records with code, name, department, semester, credits, and faculty.) Tj
+0 -16 Td
+(- The system shall manage class schedules with timings, room, section, and subject mapping.) Tj
+0 -16 Td
+(- The system shall allow timetable visibility and calendar coordination.) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(6.4 Progress and Advisory Management) Tj
+0 -16 Td
+(- The system shall record student attendance, marks, remarks, and advisor flags.) Tj
+0 -16 Td
+(- The system shall display advisories with title, message, teacher name, and audience.) Tj
+0 -16 Td
+() Tj
+ET
+
+endstream
+endobj
+7 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 936] /Contents 8 0 R /Resources << /Font << /F1 15 0 R >> >> >>
+endobj
+8 0 obj
+<< /Length 2142 >>
+stream
+BT
+/F1 13 Tf
+48 810 Td
+(6.5 Leave Workflow) Tj
+0 -16 Td
+(- Students shall be able to apply for leave using date and reason inputs.) Tj
+0 -16 Td
+(- Teachers shall be able to accept or reject leave requests.) Tj
+0 -16 Td
+(- Reject reason shall be stored and displayed when rejection occurs.) Tj
+0 -16 Td
+(- Academic office shall be able to monitor leave records in read-only mode.) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(6.6 Alert and Email Communication) Tj
+0 -16 Td
+(- Teachers and Academic Office shall be able to create alert messages.) Tj
+0 -16 Td
+(- Alerts shall support types such as Exam, Event, Information, and Urgent.) Tj
+0 -16 Td
+(- Alerts shall support all-students, department, semester, section, and specific-email targeting.) Tj
+0 -16 Td
+(- Specific-email targeting shall validate against approved student records stored in MongoDB.) Tj
+0 -16 Td
+(- Alert recipient count, recipient list, delivery status, and sent time shall be stored in database.) Tj
+0 -16 Td
+(- The system shall send alert emails using Gmail credentials configured through environment variables.) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(7. DATABASE REQUIREMENTS) Tj
+0 -16 Td
+(The system uses MongoDB as the primary database. Major collections include:) Tj
+0 -16 Td
+(- Users) Tj
+0 -16 Td
+(- Students) Tj
+0 -16 Td
+(- Teacher Subjects) Tj
+0 -16 Td
+(- Class Schedules) Tj
+0 -16 Td
+(- Advisories) Tj
+0 -16 Td
+(- Student Progress) Tj
+0 -16 Td
+(- Leave Requests) Tj
+0 -16 Td
+(- Curriculum Plans) Tj
+0 -16 Td
+(- Timetables) Tj
+0 -16 Td
+(- Academic Approvals) Tj
+0 -16 Td
+(- Academic Records) Tj
+0 -16 Td
+(- Announcements) Tj
+0 -16 Td
+(- Campaigns) Tj
+0 -16 Td
+(- Calendar Events) Tj
+0 -16 Td
+(- Response Tracking) Tj
+0 -16 Td
+(- Teacher and Academic Alerts) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(Important stored alert fields include:) Tj
+0 -16 Td
+(- tenantSlug) Tj
+0 -16 Td
+(- alertType) Tj
+0 -16 Td
+(- title) Tj
+0 -16 Td
+(- message) Tj
+0 -16 Td
+(- teacherName or academic sender name) Tj
+0 -16 Td
+(- audienceType) Tj
+0 -16 Td
+(- audienceValue) Tj
+0 -16 Td
+(- targetAudience) Tj
+0 -16 Td
+(- recipientEmails) Tj
+0 -16 Td
+(- recipientCount) Tj
+0 -16 Td
+(- deliveryStatus) Tj
+0 -16 Td
+(- sentAt) Tj
+ET
+
+endstream
+endobj
+9 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 936] /Contents 10 0 R /Resources << /Font << /F1 15 0 R >> >> >>
+endobj
+10 0 obj
+<< /Length 1724 >>
+stream
+BT
+/F1 13 Tf
+48 810 Td
+(- lastError) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(8. FRONTEND TECHNOLOGY REQUIREMENTS) Tj
+0 -16 Td
+(- React 18.2.0) Tj
+0 -16 Td
+(- React DOM 18.2.0) Tj
+0 -16 Td
+(- React Router DOM 6.22.0) Tj
+0 -16 Td
+(- Material UI 5.15.0) Tj
+0 -16 Td
+(- Emotion React 11.11.0) Tj
+0 -16 Td
+(- Emotion Styled 11.11.0) Tj
+0 -16 Td
+(- Vite 5.0.0) Tj
+0 -16 Td
+(- Tailwind CSS 3.4.0) Tj
+0 -16 Td
+(- PostCSS 8.4.0) Tj
+0 -16 Td
+(- Autoprefixer 10.4.0) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(9. BACKEND TECHNOLOGY REQUIREMENTS) Tj
+0 -16 Td
+(- Node.js runtime) Tj
+0 -16 Td
+(- Express 4.21.2) Tj
+0 -16 Td
+(- Mongoose 8.10.0) Tj
+0 -16 Td
+(- CORS 2.8.5) Tj
+0 -16 Td
+(- Dotenv 16.4.5) Tj
+0 -16 Td
+(- Nodemailer 6.9.16) Tj
+0 -16 Td
+(- Nodemon 3.1.9 for development) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(10. THEME, FONT, AND DESIGN SYSTEM DETAILS) Tj
+0 -16 Td
+(10.1 Typography) Tj
+0 -16 Td
+(- Primary font family: Manrope, Segoe UI, sans-serif) Tj
+0 -16 Td
+(- Typography h1 weight: 800) Tj
+0 -16 Td
+(- Typography h1 letter spacing: -0.04em) Tj
+0 -16 Td
+(- Typography h2 weight: 800) Tj
+0 -16 Td
+(- Typography h2 letter spacing: -0.03em) Tj
+0 -16 Td
+(- Typography h3 weight: 700) Tj
+0 -16 Td
+(- Button font weight: 700) Tj
+0 -16 Td
+(- Button text transform: none) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(10.2 Core Theme Colors) Tj
+0 -16 Td
+(- Primary Main: #0f766e) Tj
+0 -16 Td
+(- Primary Light: #ccfbf1) Tj
+0 -16 Td
+(- Primary Dark: #115e59) Tj
+0 -16 Td
+(- Secondary Main: #1d4ed8) Tj
+0 -16 Td
+(- Background Default: #f4f7f4) Tj
+0 -16 Td
+(- Background Paper: #ffffff) Tj
+0 -16 Td
+(- Text Primary: #102a26) Tj
+0 -16 Td
+(- Text Secondary: #47635d) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(10.3 Global Visual Styling) Tj
+0 -16 Td
+(- Root font family: Manrope, Segoe UI, sans-serif) Tj
+ET
+
+endstream
+endobj
+11 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 936] /Contents 12 0 R /Resources << /Font << /F1 15 0 R >> >> >>
+endobj
+12 0 obj
+<< /Length 2424 >>
+stream
+BT
+/F1 13 Tf
+48 810 Td
+(- Root text color: #102a26) Tj
+0 -16 Td
+(- Root background: #f4f7f4) Tj
+0 -16 Td
+(- Body gradient background: linear-gradient\(180deg, #f8fafc 0%, #eef6f3 100%\)) Tj
+0 -16 Td
+(- Radial background accent: rgba\(20, 184, 166, 0.1\)) Tj
+0 -16 Td
+(- Text selection color overlay: rgba\(15, 118, 110, 0.18\)) Tj
+0 -16 Td
+(- Theme border radius: 18px) Tj
+0 -16 Td
+(- Outlined input border radius: 16px) Tj
+0 -16 Td
+(- Button border radius: 999px) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(10.4 Brand Accent Styling) Tj
+0 -16 Td
+(- Logo gradient uses teal-600, emerald-500, and cyan-400) Tj
+0 -16 Td
+(- Sidebar uses dark slate background styling) Tj
+0 -16 Td
+(- Tenant workspace header uses glassmorphism white card styling) Tj
+0 -16 Td
+(- Alert dashboard banner uses gradient #082f49 to #0f766e to #d97706) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(11. NON-FUNCTIONAL REQUIREMENTS) Tj
+0 -16 Td
+(11.1 Usability) Tj
+0 -16 Td
+(- The interface shall be clean, readable, and role-specific.) Tj
+0 -16 Td
+(- The dashboard shall support responsive use across desktop and mobile screens.) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(11.2 Performance) Tj
+0 -16 Td
+(- CRUD operations shall respond efficiently for normal institutional usage.) Tj
+0 -16 Td
+(- Dashboard filtering and section switching shall be fast and readable.) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(11.3 Reliability) Tj
+0 -16 Td
+(- Critical ERP records shall persist in MongoDB.) Tj
+0 -16 Td
+(- Alert history and communication metadata shall be stored for tracking.) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(11.4 Security) Tj
+0 -16 Td
+(- Sensitive credentials shall be managed using environment variables.) Tj
+0 -16 Td
+(- Role-based access shall restrict dashboard features by user category.) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(11.5 Maintainability) Tj
+0 -16 Td
+(- The codebase shall remain modular across frontend pages, components, routes, controllers, and models.) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(12. SOFTWARE REQUIREMENTS) Tj
+0 -16 Td
+(- Operating System: Windows 10/11, Linux, or macOS) Tj
+0 -16 Td
+(- Browser: Chrome, Edge, Firefox) Tj
+0 -16 Td
+(- Package Manager: npm) Tj
+0 -16 Td
+(- IDE: VS Code recommended) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(13. HARDWARE REQUIREMENTS) Tj
+0 -16 Td
+(- Processor: Intel Core i3 / AMD equivalent or higher) Tj
+0 -16 Td
+(- RAM: 4 GB minimum, 8 GB recommended) Tj
+0 -16 Td
+(- Storage: At least 2 GB free disk space) Tj
+0 -16 Td
+(- Internet: Required for mail delivery and cloud deployment) Tj
+ET
+
+endstream
+endobj
+13 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 936] /Contents 14 0 R /Resources << /Font << /F1 15 0 R >> >> >>
+endobj
+14 0 obj
+<< /Length 1018 >>
+stream
+BT
+/F1 13 Tf
+48 810 Td
+() Tj
+0 -16 Td
+(14. DEPLOYMENT REQUIREMENTS) Tj
+0 -16 Td
+(- Frontend may be deployed on Vercel) Tj
+0 -16 Td
+(- Backend may be deployed on Render or Railway) Tj
+0 -16 Td
+(- Production deployment requires cloud MongoDB such as MongoDB Atlas) Tj
+0 -16 Td
+(- Localhost MongoDB is suitable only for local development on the same machine) Tj
+0 -16 Td
+(- Required environment variables include MONGODB_URI, DEFAULT_TENANT, MAIL_ALERT_EMAIL,) Tj
+0 -16 Td
+(  MAIL_ALERT_APP_PASSWORD, MAIL_ALERT_FROM_NAME, and frontend API base URL) Tj
+0 -16 Td
+() Tj
+0 -16 Td
+(15. CONCLUSION) Tj
+0 -16 Td
+(AYRA ERP is a modular, database-driven university ERP platform that integrates academic workflows,) Tj
+0 -16 Td
+(communication management, user dashboards, and alert messaging into one centralized application.) Tj
+0 -16 Td
+(The system is suitable for institutions that need a lightweight but extendable ERP solution with) Tj
+0 -16 Td
+(modern frontend design, MongoDB persistence, and role-based operations.) Tj
+ET
+
+endstream
+endobj
+15 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 16
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000147 00000 n 
+0000000274 00000 n 
+0000003098 00000 n 
+0000003225 00000 n 
+0000005912 00000 n 
+0000006039 00000 n 
+0000008233 00000 n 
+0000008361 00000 n 
+0000010138 00000 n 
+0000010267 00000 n 
+0000012744 00000 n 
+0000012873 00000 n 
+0000013944 00000 n 
+trailer
+<< /Size 16 /Root 1 0 R >>
+startxref
+14015
+%%EOF

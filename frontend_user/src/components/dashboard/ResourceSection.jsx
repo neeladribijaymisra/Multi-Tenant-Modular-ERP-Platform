@@ -1,4 +1,5 @@
 import {
+  Autocomplete,
   Button,
   Dialog,
   DialogActions,
@@ -22,7 +23,39 @@ function shouldShowField(field, form) {
     return true;
   }
 
+  if (field.showWhen.oneOf) {
+    return field.showWhen.oneOf.includes(form[field.showWhen.field]);
+  }
+
   return form[field.showWhen.field] === field.showWhen.equals;
+}
+
+function getAudienceFieldLabel(audienceType) {
+  if (audienceType === "department") {
+    return "Select Department";
+  }
+
+  if (audienceType === "semester") {
+    return "Select Semester";
+  }
+
+  if (audienceType === "section") {
+    return "Select Section";
+  }
+
+  if (audienceType === "specific-emails") {
+    return "Select Student Email(s)";
+  }
+
+  return "Audience Value";
+}
+
+function getAudienceFieldOptions(field, form) {
+  if (field.name !== "audienceValue" || !field.optionGroups) {
+    return field.options || [];
+  }
+
+  return field.optionGroups[form.audienceType] || [];
 }
 
 function getStatusStyles(value) {
@@ -62,6 +95,11 @@ function formatCellValue(field, value) {
         {value || "-"}
       </span>
     );
+  }
+
+  if (field.name === "sentAt" && value) {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? value : date.toLocaleString();
   }
 
   if (field.name === "fullName" && value) {
@@ -104,6 +142,7 @@ export default function ResourceSection({
 }) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
+  const [profileItem, setProfileItem] = useState(null);
   const [form, setForm] = useState({});
   const [actionError, setActionError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -135,6 +174,10 @@ export default function ResourceSection({
       ...current,
       [name]: type === "number" ? Number(value) : value,
     }));
+  }
+
+  function openProfileDialog(item) {
+    setProfileItem(item);
   }
 
   async function handleSubmit(event) {
@@ -245,9 +288,19 @@ export default function ResourceSection({
                   <tr key={item._id} className="border-b border-slate-100 last:border-b-0">
                     {visibleFields.map((field) => (
                       <td key={field.name} className="py-4 pr-4 text-slate-700">
-                        {formatCellValue(
-                          { ...field, photoFieldValue: item.photoDataUrl },
-                          item[field.name],
+                        {section.enableProfileView && ["fullName", "studentName"].includes(field.name) ? (
+                          <button
+                            type="button"
+                            className="font-semibold text-slate-900 transition hover:text-teal-700"
+                            onClick={() => openProfileDialog(item)}
+                          >
+                            {item[field.name] || "-"}
+                          </button>
+                        ) : (
+                          formatCellValue(
+                            { ...field, photoFieldValue: item.photoDataUrl },
+                            item[field.name],
+                          )
                         )}
                       </td>
                     ))}
@@ -302,33 +355,86 @@ export default function ResourceSection({
                 .filter((field) => !field.hideOnCreate || editingItem)
                 .filter((field) => !field.hideOnEdit || !editingItem)
                 .filter((field) => shouldShowField(field, form))
-                .map((field) => (
-                  <TextField
-                    key={field.name}
-                    label={field.label}
-                    select={Boolean(field.options)}
-                    type={field.type === "date" ? "date" : field.type || "text"}
-                    value={form[field.name] ?? ""}
-                    required={Boolean(field.required || (field.showWhen && shouldShowField(field, form)))}
-                    disabled={Boolean(field.disabled)}
-                    multiline={Boolean(field.multiline)}
-                    minRows={field.multiline ? 3 : undefined}
-                    onChange={(event) => updateField(field.name, event.target.value, field.type)}
-                    InputLabelProps={field.type === "date" ? { shrink: true } : undefined}
-                    fullWidth
-                  >
-                    {[...(field.options || [])]
-                      .concat(
-                        field.options?.includes(form[field.name]) || !form[field.name] ? [] : [form[field.name]],
-                      )
-                      .filter((option, index, options) => options.indexOf(option) === index)
-                      .map((option) => (
-                      <MenuItem key={option} value={option}>
-                        {option}
-                      </MenuItem>
-                      ))}
-                  </TextField>
-                ))}
+                .map((field) => {
+                  const dynamicOptions = getAudienceFieldOptions(field, form);
+                  const dynamicLabel =
+                    field.name === "audienceValue" ? getAudienceFieldLabel(form.audienceType) : field.label;
+
+                  if (field.autocompleteMultiple && form.audienceType === "specific-emails") {
+                    const selectedValues = String(form[field.name] || "")
+                      .split(",")
+                      .map((item) => item.trim())
+                      .filter(Boolean);
+
+                    return (
+                      <Autocomplete
+                        key={field.name}
+                        multiple
+                        options={dynamicOptions}
+                        value={selectedValues}
+                        onChange={(_event, values) => updateField(field.name, values.join(", "), field.type)}
+                        filterSelectedOptions
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label={dynamicLabel}
+                            placeholder="Search and choose email ids"
+                            required={Boolean(field.required || (field.showWhen && shouldShowField(field, form)))}
+                            fullWidth
+                          />
+                        )}
+                      />
+                    );
+                  }
+
+                  if (field.autocomplete) {
+                    return (
+                      <Autocomplete
+                        key={field.name}
+                        options={dynamicOptions}
+                        value={form[field.name] || null}
+                        onChange={(_event, value) => updateField(field.name, value || "", field.type)}
+                        renderInput={(params) => (
+                          <TextField
+                            {...params}
+                            label={dynamicLabel}
+                            placeholder={field.placeholder || "Search and select"}
+                            required={Boolean(field.required || (field.showWhen && shouldShowField(field, form)))}
+                            fullWidth
+                          />
+                        )}
+                      />
+                    );
+                  }
+
+                  return (
+                    <TextField
+                      key={field.name}
+                      label={dynamicLabel}
+                      select={Boolean(dynamicOptions.length)}
+                      type={field.type === "date" ? "date" : field.type || "text"}
+                      value={form[field.name] ?? ""}
+                      required={Boolean(field.required || (field.showWhen && shouldShowField(field, form)))}
+                      disabled={Boolean(field.disabled)}
+                      multiline={Boolean(field.multiline)}
+                      minRows={field.multiline ? 3 : undefined}
+                      onChange={(event) => updateField(field.name, event.target.value, field.type)}
+                      InputLabelProps={field.type === "date" ? { shrink: true } : undefined}
+                      fullWidth
+                    >
+                      {[...dynamicOptions]
+                        .concat(
+                          dynamicOptions.includes(form[field.name]) || !form[field.name] ? [] : [form[field.name]],
+                        )
+                        .filter((option, index, options) => options.indexOf(option) === index)
+                        .map((option) => (
+                          <MenuItem key={option} value={option}>
+                            {option}
+                          </MenuItem>
+                        ))}
+                    </TextField>
+                  );
+                })}
             </div>
             {actionError ? <p className="mt-4 text-sm font-semibold text-rose-600">{actionError}</p> : null}
           </DialogContent>
@@ -339,6 +445,35 @@ export default function ResourceSection({
             </Button>
           </DialogActions>
         </form>
+      </Dialog>
+
+      <Dialog open={Boolean(profileItem)} onClose={() => setProfileItem(null)} fullWidth maxWidth="sm">
+        <DialogTitle>Student Profile</DialogTitle>
+        <DialogContent>
+          {profileItem ? (
+            <div className="grid gap-3 pt-2 sm:grid-cols-2">
+              {[
+                ["Full Name", profileItem.fullName || profileItem.studentName],
+                ["Student ID", profileItem.studentId],
+                ["Department", profileItem.department],
+                ["Semester", profileItem.semester],
+                ["Section", profileItem.section],
+                ["Email", profileItem.email],
+                ["Phone", profileItem.phone],
+                ["SGPA", profileItem.sgpa],
+                ["CGPA", profileItem.cgpa],
+              ].map(([label, value]) => (
+                <div key={label} className="rounded-2xl border border-slate-100 bg-slate-50 px-4 py-3">
+                  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-500">{label}</p>
+                  <p className="mt-2 text-sm font-semibold text-slate-900">{value || "-"}</p>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setProfileItem(null)}>Close</Button>
+        </DialogActions>
       </Dialog>
     </section>
   );

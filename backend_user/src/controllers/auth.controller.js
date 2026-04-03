@@ -25,6 +25,10 @@ export async function login(req, res, next) {
           }).lean()
         : null;
 
+    if (user.role === "student" && studentProfile?.status !== "accept") {
+      return res.status(403).json({ message: "Contact teacher for login approval." });
+    }
+
     res.json({
       message: "Login successful",
       user: {

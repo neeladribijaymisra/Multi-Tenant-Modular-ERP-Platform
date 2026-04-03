@@ -8,6 +8,8 @@ const timetableSchema = new mongoose.Schema(
     section: { type: String, required: true },
     day: { type: String, required: true },
     slot: { type: String, required: true },
+    slotType: { type: String, required: true, enum: ["Theory", "Lab", "Break"] },
+    subjectCode: { type: String, default: "" },
     subjectName: { type: String, required: true },
     facultyName: { type: String, required: true },
     room: { type: String, required: true },

@@ -131,8 +131,8 @@ export const roleContent = {
     ],
   },
   communication: {
-    welcome: "Run campus-wide communication, event campaigns, and response monitoring from one console.",
-    modules: ["Announcements", "Campaigns", "Events", "Helpdesk Insights"],
+    welcome: "Run campus-wide communication, schedule public events, manage hostel and transport operations, and send targeted student alerts from one console.",
+    modules: ["Events", "Alert Broadcasts", "Hostel Desk", "Transport Desk"],
     highlights: [
       { label: "Active Campaigns", value: "08", trend: "Admissions and fest season" },
       { label: "Notices Scheduled", value: "19", trend: "Across 5 segments" },
@@ -144,7 +144,7 @@ export const roleContent = {
       { time: "12:30", title: "Festival Campaign Standup", meta: "Media Team" },
       { time: "17:00", title: "Parent Outreach Digest", meta: "Publishing Queue" },
     ],
-    actions: ["Draft announcement", "Schedule campaign", "Export sentiment report"],
+    actions: ["Schedule hackathon", "Allot hostel room", "Assign bus seat"],
     tableTitle: "Communication Pipeline",
     tableRows: [
       ["Hostel Maintenance Notice", "Queued", "Tonight 8 PM", "Students"],

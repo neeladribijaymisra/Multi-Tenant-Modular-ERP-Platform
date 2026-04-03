@@ -1,9 +1,11 @@
 import Advisory from "../models/Advisory.js";
+import AttendanceRecord from "../models/AttendanceRecord.js";
 import ClassSchedule from "../models/ClassSchedule.js";
 import LeaveRequest from "../models/LeaveRequest.js";
 import Student from "../models/Student.js";
 import StudentProgress from "../models/StudentProgress.js";
 import TeacherAlert from "../models/TeacherAlert.js";
+import TeacherAssignment from "../models/TeacherAssignment.js";
 import TeacherSubject from "../models/TeacherSubject.js";
 import User from "../models/User.js";
 import { sendAlertMail } from "../utils/mailer.js";
@@ -16,7 +18,6 @@ export async function createTeacherStudent(req, res, next) {
     const tenantSlug = req.params.tenant;
     const {
       studentId,
-      username,
       password,
       fullName,
       department,
@@ -24,6 +25,8 @@ export async function createTeacherStudent(req, res, next) {
       section,
       email,
       phone,
+      sgpa,
+      cgpa,
       status,
     } = req.body;
 
@@ -34,20 +37,22 @@ export async function createTeacherStudent(req, res, next) {
     const student = await Student.create({
       tenantSlug,
       studentId,
-      username,
+      username: studentId,
       fullName,
       department,
       semester,
       section,
       email,
       phone,
+      sgpa,
+      cgpa,
       status,
     });
 
     await User.create({
       tenantSlug,
       role: "student",
-      username,
+      username: studentId,
       password: password.trim(),
       displayName: fullName,
     });
@@ -76,7 +81,7 @@ export async function updateTeacherStudent(req, res, next) {
       { new: true, runValidators: true },
     );
 
-    const nextUsername = req.body.username || currentStudent.username;
+    const nextUsername = req.body.studentId || currentStudent.studentId;
     const nextDisplayName = req.body.fullName || currentStudent.fullName;
 
     const userUpdate = {
@@ -92,7 +97,7 @@ export async function updateTeacherStudent(req, res, next) {
       {
         tenantSlug,
         role: "student",
-        username: currentStudent.username,
+        username: currentStudent.studentId,
       },
       userUpdate,
       { new: true, runValidators: true },
@@ -147,6 +152,11 @@ export const listProgress = listDocuments(StudentProgress);
 export const createProgress = createDocument(StudentProgress);
 export const updateProgress = updateDocument(StudentProgress);
 export const deleteProgress = deleteDocument(StudentProgress);
+export const listTeacherAssignments = listDocuments(TeacherAssignment);
+export const listAttendanceRecords = listDocuments(AttendanceRecord);
+export const createAttendanceRecord = createDocument(AttendanceRecord);
+export const updateAttendanceRecord = updateDocument(AttendanceRecord);
+export const deleteAttendanceRecord = deleteDocument(AttendanceRecord);
 
 function buildAlertAudienceLabel(audienceType, audienceValue) {
   if (audienceType === "department" && audienceValue) {

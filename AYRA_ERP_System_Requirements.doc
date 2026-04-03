@@ -1,0 +1,273 @@
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>AYRA ERP System Requirements Specification</title>
+  <style>
+    body { font-family: Calibri, Arial, sans-serif; margin: 36px; color: #1f2937; line-height: 1.5; }
+    h1, h2, h3 { color: #0f172a; }
+    h1 { text-align: center; margin-bottom: 8px; }
+    .subtitle { text-align: center; color: #475569; margin-bottom: 28px; }
+    table { border-collapse: collapse; width: 100%; margin: 14px 0 24px; }
+    th, td { border: 1px solid #cbd5e1; padding: 8px 10px; text-align: left; vertical-align: top; }
+    th { background: #e2e8f0; }
+    ul { margin-top: 6px; }
+    .section { margin-top: 26px; }
+  </style>
+</head>
+<body>
+  <h1>System Requirements Specification</h1>
+  <p class="subtitle">Project: AYRA ERP Portal</p>
+
+  <div class="section">
+    <h2>1. Introduction</h2>
+    <p>
+      AYRA ERP is a web-based academic enterprise resource planning system designed to support students,
+      teachers, academic office staff, and communication teams. The system centralizes student records,
+      subject and class management, academic approvals, calendar events, leave processing, and email alert
+      communication through role-based dashboards.
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>2. Project Objective</h2>
+    <p>
+      The objective of the AYRA ERP project is to provide a unified university management platform that
+      improves information access, academic coordination, student monitoring, and communication efficiency.
+    </p>
+  </div>
+
+  <div class="section">
+    <h2>3. Scope of the System</h2>
+    <ul>
+      <li>Student profile, progress, timetable, advisory, leave, and calendar access</li>
+      <li>Teacher-side management of students, subjects, classes, advisories, progress, and alerts</li>
+      <li>Academic office management of teachers, curriculum plans, timetables, records, approvals, and alerts</li>
+      <li>Communication management for announcements, campaigns, event publishing, and response tracking</li>
+      <li>Email alert delivery to all students or selected student email groups</li>
+      <li>MongoDB-based persistence for operational records and alert history</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>4. Users and Roles</h2>
+    <table>
+      <tr>
+        <th>Role</th>
+        <th>Main Responsibilities</th>
+      </tr>
+      <tr>
+        <td>Student</td>
+        <td>View profile, progress, classes, advisories, calendar, and apply for leave</td>
+      </tr>
+      <tr>
+        <td>Teacher</td>
+        <td>Manage students, subjects, classes, progress, advisories, and send alerts</td>
+      </tr>
+      <tr>
+        <td>Academic Office</td>
+        <td>Manage teachers, curriculum, approvals, records, student registry, leave monitoring, and alerts</td>
+      </tr>
+      <tr>
+        <td>Communication Team</td>
+        <td>Manage announcements, campaigns, events, and response tracking</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>5. Functional Requirements</h2>
+
+    <h3>5.1 Authentication and Access Control</h3>
+    <ul>
+      <li>The system shall provide login functionality for all supported user roles.</li>
+      <li>The system shall provide tenant-based routing and role-based dashboard access.</li>
+    </ul>
+
+    <h3>5.2 Student Module</h3>
+    <ul>
+      <li>The system shall display student profile information, department, semester, section, and status.</li>
+      <li>The system shall display semester progress, attendance, marks, and remarks.</li>
+      <li>The system shall allow students to submit leave requests.</li>
+      <li>The system shall allow students to view advisories and calendar events.</li>
+      <li>The system shall support student profile photo upload and removal.</li>
+    </ul>
+
+    <h3>5.3 Teacher Module</h3>
+    <ul>
+      <li>The system shall allow teachers to create, update, and delete student records.</li>
+      <li>The system shall store student email addresses for communication.</li>
+      <li>The system shall allow teachers to manage subject lists and class schedules.</li>
+      <li>The system shall allow teachers to publish advisories.</li>
+      <li>The system shall allow teachers to update student marks, attendance, and remarks.</li>
+      <li>The system shall allow teachers to review and decide leave applications.</li>
+      <li>The system shall allow teachers to send email alerts to all students or selected student groups.</li>
+    </ul>
+
+    <h3>5.4 Academic Office Module</h3>
+    <ul>
+      <li>The system shall allow academic office staff to create and manage teacher accounts.</li>
+      <li>The system shall allow academic office staff to manage curriculum plans and timetables.</li>
+      <li>The system shall allow academic office staff to manage academic approvals and records.</li>
+      <li>The system shall allow academic office staff to monitor leave requests.</li>
+      <li>The system shall allow academic office staff to send and review student alert messages.</li>
+    </ul>
+
+    <h3>5.5 Communication Module</h3>
+    <ul>
+      <li>The system shall allow communication users to manage announcements.</li>
+      <li>The system shall allow communication users to manage campaigns and event records.</li>
+      <li>The system shall allow communication users to maintain response tracking data.</li>
+    </ul>
+
+    <h3>5.6 Alert and Email Module</h3>
+    <ul>
+      <li>The system shall send alert emails using Nodemailer through a configured Gmail account.</li>
+      <li>The system shall support audiences based on all students, department, semester, section, or specific student emails.</li>
+      <li>The system shall validate student email targets against registered approved student records.</li>
+      <li>The system shall store alert history including audience, recipient count, status, and timestamps.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>6. Non-Functional Requirements</h2>
+    <table>
+      <tr>
+        <th>Category</th>
+        <th>Requirement</th>
+      </tr>
+      <tr>
+        <td>Usability</td>
+        <td>The system shall provide a modern responsive dashboard UI for desktop and mobile usage.</td>
+      </tr>
+      <tr>
+        <td>Performance</td>
+        <td>The system shall support normal academic ERP operations with quick CRUD response for typical college-scale usage.</td>
+      </tr>
+      <tr>
+        <td>Reliability</td>
+        <td>The system shall preserve academic and communication data in MongoDB with route-level validation.</td>
+      </tr>
+      <tr>
+        <td>Security</td>
+        <td>The system shall use role-based access flow and environment variables for mail and database configuration.</td>
+      </tr>
+      <tr>
+        <td>Maintainability</td>
+        <td>The system shall follow modular frontend and backend structure for easier extension.</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>7. Software Requirements</h2>
+    <table>
+      <tr>
+        <th>Component</th>
+        <th>Requirement</th>
+      </tr>
+      <tr>
+        <td>Operating System</td>
+        <td>Windows 10/11, Linux, or macOS</td>
+      </tr>
+      <tr>
+        <td>Frontend</td>
+        <td>React 18, Vite 5, React Router DOM 6, Material UI 5, Tailwind CSS 3</td>
+      </tr>
+      <tr>
+        <td>Backend</td>
+        <td>Node.js, Express 4, Mongoose 8, Nodemailer 6</td>
+      </tr>
+      <tr>
+        <td>Database</td>
+        <td>MongoDB Community or MongoDB Atlas</td>
+      </tr>
+      <tr>
+        <td>Development Tools</td>
+        <td>VS Code, npm, Nodemon, Git</td>
+      </tr>
+      <tr>
+        <td>Browser Support</td>
+        <td>Google Chrome, Microsoft Edge, Mozilla Firefox</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>8. Hardware Requirements</h2>
+    <table>
+      <tr>
+        <th>Item</th>
+        <th>Minimum Requirement</th>
+      </tr>
+      <tr>
+        <td>Processor</td>
+        <td>Intel Core i3 / AMD equivalent or above</td>
+      </tr>
+      <tr>
+        <td>RAM</td>
+        <td>4 GB minimum, 8 GB recommended</td>
+      </tr>
+      <tr>
+        <td>Storage</td>
+        <td>2 GB free disk space minimum</td>
+      </tr>
+      <tr>
+        <td>Internet</td>
+        <td>Required for email alert delivery and cloud deployment</td>
+      </tr>
+    </table>
+  </div>
+
+  <div class="section">
+    <h2>9. Database Requirements</h2>
+    <p>The system uses MongoDB collections for the following major entities:</p>
+    <ul>
+      <li>Users</li>
+      <li>Students</li>
+      <li>Teacher Subjects</li>
+      <li>Class Schedules</li>
+      <li>Advisories</li>
+      <li>Student Progress</li>
+      <li>Leave Requests</li>
+      <li>Curriculum Plans</li>
+      <li>Timetables</li>
+      <li>Academic Approvals</li>
+      <li>Academic Records</li>
+      <li>Announcements</li>
+      <li>Campaigns</li>
+      <li>Calendar Events</li>
+      <li>Response Tracking</li>
+      <li>Teacher and Academic Alerts</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>10. Deployment Requirements</h2>
+    <ul>
+      <li>Frontend may be deployed on Vercel.</li>
+      <li>Backend may be deployed on Render or Railway.</li>
+      <li>Cloud deployment requires a hosted MongoDB URI; localhost MongoDB is only for local development.</li>
+      <li>Environment variables required: MONGODB_URI, DEFAULT_TENANT, MAIL_ALERT_EMAIL, MAIL_ALERT_APP_PASSWORD, MAIL_ALERT_FROM_NAME, and frontend API base URL.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>11. Assumptions and Constraints</h2>
+    <ul>
+      <li>The system assumes valid student email addresses are entered while creating student records.</li>
+      <li>The system assumes Gmail app password configuration for email alert delivery.</li>
+      <li>The current project uses a single tenant example, with tenant-ready routing for extension.</li>
+      <li>The project currently focuses on ERP operations and not on online payment gateway integration.</li>
+    </ul>
+  </div>
+
+  <div class="section">
+    <h2>12. Conclusion</h2>
+    <p>
+      AYRA ERP is a modular academic ERP solution that integrates student management, academic administration,
+      timetable planning, communication workflows, and role-based email alerts into one centralized platform.
+      The project is suitable for academic institutions seeking a lightweight but extensible ERP foundation.
+    </p>
+  </div>
+</body>
+</html>

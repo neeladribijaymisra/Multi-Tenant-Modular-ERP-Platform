@@ -1,0 +1,7 @@
+services:
+  - type: web
+    name: ayra-backend-user
+    runtime: node
+    rootDir: backend_user
+    buildCommand: npm install
+    startCommand: npm start

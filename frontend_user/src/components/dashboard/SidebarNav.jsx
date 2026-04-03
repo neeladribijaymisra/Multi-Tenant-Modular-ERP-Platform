@@ -1,27 +1,37 @@
-import { appModules } from "../../data/erpData";
 import LogoMark from "../common/LogoMark";
 
 const navDescriptions = {
   Dashboard: "Overview and alerts",
   Academics: "Records, classes, and curriculum",
+  Attendance: "Attendance sheets and summaries",
   Communication: "Notices and messaging",
   Calendar: "Events and deadlines",
   Alert: "Email alerts and broadcasts",
+  Hostel: "Hostel inventory and allotments",
   Support: "Requests and follow-up",
+  Transport: "Buses, routes, and seat allotments",
 };
 
-export default function SidebarNav({ roleLabel, activeModule, onSelectModule }) {
+export default function SidebarNav({
+  roleLabel,
+  activeModule,
+  onSelectModule,
+  modules = [],
+  showProfile = true,
+}) {
   return (
-    <aside className="flex h-full flex-col rounded-[28px] border border-white/60 bg-slate-950 px-5 py-6 text-white shadow-2xl shadow-slate-900/20 lg:sticky lg:top-0">
+    <aside className="flex min-h-full flex-col rounded-[28px] border border-white/60 bg-slate-950 px-5 py-6 text-white shadow-2xl shadow-slate-900/20">
       <LogoMark compact />
-      <div className="mt-8 rounded-3xl bg-white/10 p-4">
-        <p className="text-xs uppercase tracking-[0.28em] text-teal-200/90">Signed in as</p>
-        <p className="mt-2 text-xl font-bold">{roleLabel}</p>
-        <p className="mt-1 text-sm text-slate-300">University role workspace</p>
-      </div>
+      {showProfile ? (
+        <div className="mt-8 rounded-3xl bg-white/10 p-4">
+          <p className="text-xs uppercase tracking-[0.28em] text-teal-200/90">Signed in as</p>
+          <p className="mt-2 text-xl font-bold">{roleLabel}</p>
+          <p className="mt-1 text-sm text-slate-300">University role workspace</p>
+        </div>
+      ) : null}
 
       <nav className="mt-8 space-y-2">
-        {appModules.map((module) => {
+        {modules.map((module) => {
           const isActive = module === activeModule;
 
           return (

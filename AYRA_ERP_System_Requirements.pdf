@@ -1,0 +1,213 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 1000] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 4802 >>
+stream
+BT
+/F1 11 Tf
+45 800 Td
+(AYRA ERP System Requirements Specification) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(Project: AYRA ERP Portal) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(1. Introduction) Tj
+0 -14 Td
+(AYRA ERP is a web-based academic enterprise resource planning system for students, teachers,) Tj
+0 -14 Td
+(academic office staff, and communication teams. It manages student records, subjects, classes,) Tj
+0 -14 Td
+(advisories, leave requests, approvals, calendar events, and email alerts.) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(2. Main Modules) Tj
+0 -14 Td
+(- Student: profile, progress, classes, advisories, calendar, leave requests, photo upload) Tj
+0 -14 Td
+(- Teacher: student management, subjects, classes, advisories, progress, leave approval, alerts) Tj
+0 -14 Td
+(- Academic Office: teachers, curriculum, timetables, approvals, records, leave monitor, alerts) Tj
+0 -14 Td
+(- Communication: announcements, campaigns, events, response tracking) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(3. Alert System) Tj
+0 -14 Td
+(- Email alerts use Nodemailer with Gmail app password configuration) Tj
+0 -14 Td
+(- Alerts can be sent to all students, department, semester, section, or specific student emails) Tj
+0 -14 Td
+(- Alert history is stored in MongoDB with recipient count and delivery status) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(4. Technology Stack) Tj
+0 -14 Td
+(- Frontend: React 18, Vite 5, React Router DOM 6, Material UI 5, Tailwind CSS 3) Tj
+0 -14 Td
+(- Backend: Node.js, Express 4, Mongoose 8, Nodemailer 6) Tj
+0 -14 Td
+(- Database: MongoDB Community / MongoDB Atlas) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(5. Functional Requirements) Tj
+0 -14 Td
+(- Role-based login and tenant-aware routes) Tj
+0 -14 Td
+(- CRUD operations for academic and ERP data) Tj
+0 -14 Td
+(- Student email storage for targeted communication) Tj
+0 -14 Td
+(- Academic calendar and timetable management) Tj
+0 -14 Td
+(- Leave request and approval workflow) Tj
+0 -14 Td
+(- Communication and alert broadcast support) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(6. Non-Functional Requirements) Tj
+0 -14 Td
+(- Responsive user interface for desktop and mobile) Tj
+0 -14 Td
+(- Database-backed persistence and validation) Tj
+0 -14 Td
+(- Environment-based configuration for mail and MongoDB) Tj
+0 -14 Td
+(- Modular frontend and backend architecture) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(7. Theme, Font, and Color Information) Tj
+0 -14 Td
+(- Primary Font Family: Manrope, Segoe UI, sans-serif) Tj
+0 -14 Td
+(- MUI Typography Font Family: "Manrope", "Segoe UI", sans-serif) Tj
+0 -14 Td
+(- h1 weight: 800, letter spacing: -0.04em) Tj
+0 -14 Td
+(- h2 weight: 800, letter spacing: -0.03em) Tj
+0 -14 Td
+(- h3 weight: 700) Tj
+0 -14 Td
+(- Button font weight: 700, textTransform: none) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(8. Core Theme Colors) Tj
+0 -14 Td
+(- Primary Main: #0f766e) Tj
+0 -14 Td
+(- Primary Light: #ccfbf1) Tj
+0 -14 Td
+(- Primary Dark: #115e59) Tj
+0 -14 Td
+(- Secondary Main: #1d4ed8) Tj
+0 -14 Td
+(- Background Default: #f4f7f4) Tj
+0 -14 Td
+(- Background Paper: #ffffff) Tj
+0 -14 Td
+(- Text Primary: #102a26) Tj
+0 -14 Td
+(- Text Secondary: #47635d) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(9. UI Styling Details) Tj
+0 -14 Td
+(- Global root text color: #102a26) Tj
+0 -14 Td
+(- Global root background: #f4f7f4) Tj
+0 -14 Td
+(- Body background gradient: linear-gradient\(180deg, #f8fafc 0%, #eef6f3 100%\)) Tj
+0 -14 Td
+(- Body radial accent: rgba\(20, 184, 166, 0.1\)) Tj
+0 -14 Td
+(- Text selection background: rgba\(15, 118, 110, 0.18\)) Tj
+0 -14 Td
+(- Border radius theme shape: 18px) Tj
+0 -14 Td
+(- MuiButton border radius: 999px) Tj
+0 -14 Td
+(- MuiOutlinedInput border radius: 16px) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(10. Brand and Dashboard Accent Colors) Tj
+0 -14 Td
+(- Logo gradient: teal-600 to emerald-500 to cyan-400) Tj
+0 -14 Td
+(- Logo text color: white) Tj
+0 -14 Td
+(- Sidebar background: slate-950) Tj
+0 -14 Td
+(- Tenant workspace uses white glassmorphism card styling) Tj
+0 -14 Td
+(- Teacher alert banner uses gradient: #082f49 to #0f766e to #d97706) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(11. Deployment Requirements) Tj
+0 -14 Td
+(- Frontend can be deployed to Vercel) Tj
+0 -14 Td
+(- Backend can be deployed to Render or Railway) Tj
+0 -14 Td
+(- Cloud deployment requires a hosted MongoDB URI instead of localhost) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(12. Minimum Hardware / Software) Tj
+0 -14 Td
+(- Processor: Intel Core i3 / AMD equivalent or higher) Tj
+0 -14 Td
+(- RAM: 4 GB minimum, 8 GB recommended) Tj
+0 -14 Td
+(- Storage: 2 GB free space minimum) Tj
+0 -14 Td
+(- Browser: Chrome, Edge, or Firefox) Tj
+0 -14 Td
+() Tj
+0 -14 Td
+(Conclusion) Tj
+0 -14 Td
+(AYRA ERP is a modular university ERP platform that integrates academic operations,) Tj
+0 -14 Td
+(communication workflows, and role-based alert messaging in one centralized system.) Tj
+0 -14 Td
+(This document also includes the current frontend font and color theme values used in the project.) Tj
+ET
+
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000242 00000 n 
+0000005096 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+5166
+%%EOF

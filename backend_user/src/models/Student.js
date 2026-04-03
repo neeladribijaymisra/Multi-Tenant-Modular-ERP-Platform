@@ -12,6 +12,10 @@ const studentSchema = new mongoose.Schema(
     email: { type: String, required: true },
     phone: { type: String, required: true },
     photoDataUrl: { type: String, default: "" },
+    photoMimeType: { type: String, default: "" },
+    photoUpdatedAt: { type: Date, default: null },
+    sgpa: { type: Number, default: 0 },
+    cgpa: { type: Number, default: 0 },
     status: {
       type: String,
       enum: ["pending", "accept"],

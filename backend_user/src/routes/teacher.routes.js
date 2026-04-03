@@ -2,12 +2,14 @@ import { Router } from "express";
 
 import {
   createAlert,
+  createAttendanceRecord,
   createAdvisory,
   createClass,
   createProgress,
   createSubject,
   createTeacherStudent,
   deleteAlert,
+  deleteAttendanceRecord,
   deleteAdvisory,
   deleteClass,
   deleteProgress,
@@ -15,12 +17,15 @@ import {
   deleteTeacherStudent,
   listAlerts,
   listAdvisories,
+  listAttendanceRecords,
   listClasses,
   listProgress,
   listTeacherLeaveRequests,
+  listTeacherAssignments,
   listSubjects,
   listTeacherStudents,
   updateAdvisory,
+  updateAttendanceRecord,
   updateClass,
   updateTeacherLeaveRequest,
   updateProgress,
@@ -54,6 +59,12 @@ router.get("/progress", listProgress);
 router.post("/progress", createProgress);
 router.put("/progress/:id", updateProgress);
 router.delete("/progress/:id", deleteProgress);
+
+router.get("/teacher-assignments", listTeacherAssignments);
+router.get("/attendance", listAttendanceRecords);
+router.post("/attendance", createAttendanceRecord);
+router.put("/attendance/:id", updateAttendanceRecord);
+router.delete("/attendance/:id", deleteAttendanceRecord);
 
 router.get("/alerts", listAlerts);
 router.post("/alerts", createAlert);

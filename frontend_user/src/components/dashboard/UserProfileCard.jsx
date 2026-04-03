@@ -25,10 +25,11 @@ export default function UserProfileCard({
         { label: "Department", value: studentProfile.department },
         { label: "Semester", value: studentProfile.semester },
         { label: "Section", value: studentProfile.section },
+        { label: "SGPA", value: studentProfile.sgpa },
+        { label: "CGPA", value: studentProfile.cgpa },
         { label: "Email", value: studentProfile.email },
         { label: "Phone", value: studentProfile.phone },
         { label: "Tenant", value: session.tenant?.toUpperCase() || session.tenantSlug?.toUpperCase() },
-        { label: "Status", value: studentProfile.status },
       ]
     : [
         { label: "Name", value: session.displayName },
@@ -70,7 +71,7 @@ export default function UserProfileCard({
         {studentProfile ? (
           <div className="flex flex-wrap gap-3">
             <Button component="label" variant="contained" disabled={photoUpdating}>
-              {photo ? "Change Photo" : "Upload Photo"}
+              {photo ? "Change and Crop Photo" : "Upload and Crop Photo"}
               <input
                 type="file"
                 accept="image/*"

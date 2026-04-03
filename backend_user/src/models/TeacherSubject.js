@@ -8,6 +8,7 @@ const teacherSubjectSchema = new mongoose.Schema(
     department: { type: String, required: true },
     semester: { type: Number, required: true },
     credits: { type: Number, required: true },
+    kind: { type: String, required: true, enum: ["Theory", "Lab"] },
     facultyName: { type: String, required: true },
   },
   { timestamps: true },

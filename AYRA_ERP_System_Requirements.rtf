@@ -1,0 +1,122 @@
+{\rtf1\ansi\deff0
+{\fonttbl{\f0 Calibri;}{\f1 Arial;}}
+\fs24
+\b AYRA ERP System Requirements Specification\b0\par
+\par
+\b Project:\b0 AYRA ERP Portal\par
+\par
+\b 1. Introduction\b0\par
+AYRA ERP is a web-based academic enterprise resource planning system designed to support students, teachers, academic office staff, and communication teams. The system centralizes student records, subject and class management, academic approvals, calendar events, leave processing, and email alert communication through role-based dashboards.\par
+\par
+\b 2. Project Objective\b0\par
+The objective of the AYRA ERP project is to provide a unified university management platform that improves information access, academic coordination, student monitoring, and communication efficiency.\par
+\par
+\b 3. Scope of the System\b0\par
+\pard\fi-360\li720
+\bullet Student profile, progress, timetable, advisory, leave, and calendar access\par
+\bullet Teacher-side management of students, subjects, classes, advisories, progress, and alerts\par
+\bullet Academic office management of teachers, curriculum plans, timetables, records, approvals, and alerts\par
+\bullet Communication management for announcements, campaigns, event publishing, and response tracking\par
+\bullet Email alert delivery to all students or selected student email groups\par
+\bullet MongoDB-based persistence for operational records and alert history\par
+\pard\fi0\li0
+\par
+\b 4. Users and Roles\b0\par
+\b Student:\b0 View profile, progress, classes, advisories, calendar, and apply for leave.\par
+\b Teacher:\b0 Manage students, subjects, classes, progress, advisories, and send alerts.\par
+\b Academic Office:\b0 Manage teachers, curriculum, approvals, records, student registry, leave monitoring, and alerts.\par
+\b Communication Team:\b0 Manage announcements, campaigns, events, and response tracking.\par
+\par
+\b 5. Functional Requirements\b0\par
+\b 5.1 Authentication and Access Control\b0\par
+\pard\fi-360\li720
+\bullet The system shall provide login functionality for all supported user roles.\par
+\bullet The system shall provide tenant-based routing and role-based dashboard access.\par
+\pard\fi0\li0
+\par
+\b 5.2 Student Module\b0\par
+\pard\fi-360\li720
+\bullet The system shall display student profile information, department, semester, section, and status.\par
+\bullet The system shall display semester progress, attendance, marks, and remarks.\par
+\bullet The system shall allow students to submit leave requests.\par
+\bullet The system shall allow students to view advisories and calendar events.\par
+\bullet The system shall support student profile photo upload and removal.\par
+\pard\fi0\li0
+\par
+\b 5.3 Teacher Module\b0\par
+\pard\fi-360\li720
+\bullet The system shall allow teachers to create, update, and delete student records.\par
+\bullet The system shall store student email addresses for communication.\par
+\bullet The system shall allow teachers to manage subject lists and class schedules.\par
+\bullet The system shall allow teachers to publish advisories.\par
+\bullet The system shall allow teachers to update student marks, attendance, and remarks.\par
+\bullet The system shall allow teachers to review and decide leave applications.\par
+\bullet The system shall allow teachers to send email alerts to all students or selected student groups.\par
+\pard\fi0\li0
+\par
+\b 5.4 Academic Office Module\b0\par
+\pard\fi-360\li720
+\bullet The system shall allow academic office staff to create and manage teacher accounts.\par
+\bullet The system shall allow academic office staff to manage curriculum plans and timetables.\par
+\bullet The system shall allow academic office staff to manage academic approvals and records.\par
+\bullet The system shall allow academic office staff to monitor leave requests.\par
+\bullet The system shall allow academic office staff to send and review student alert messages.\par
+\pard\fi0\li0
+\par
+\b 5.5 Communication Module\b0\par
+\pard\fi-360\li720
+\bullet The system shall allow communication users to manage announcements.\par
+\bullet The system shall allow communication users to manage campaigns and event records.\par
+\bullet The system shall allow communication users to maintain response tracking data.\par
+\pard\fi0\li0
+\par
+\b 5.6 Alert and Email Module\b0\par
+\pard\fi-360\li720
+\bullet The system shall send alert emails using Nodemailer through a configured Gmail account.\par
+\bullet The system shall support audiences based on all students, department, semester, section, or specific student emails.\par
+\bullet The system shall validate student email targets against registered approved student records.\par
+\bullet The system shall store alert history including audience, recipient count, status, and timestamps.\par
+\pard\fi0\li0
+\par
+\b 6. Non-Functional Requirements\b0\par
+\b Usability:\b0 The system shall provide a modern responsive dashboard UI for desktop and mobile usage.\par
+\b Performance:\b0 The system shall support normal academic ERP operations with quick CRUD response for typical college-scale usage.\par
+\b Reliability:\b0 The system shall preserve academic and communication data in MongoDB with route-level validation.\par
+\b Security:\b0 The system shall use role-based access flow and environment variables for mail and database configuration.\par
+\b Maintainability:\b0 The system shall follow modular frontend and backend structure for easier extension.\par
+\par
+\b 7. Software Requirements\b0\par
+\b Frontend:\b0 React 18, Vite 5, React Router DOM 6, Material UI 5, Tailwind CSS 3\par
+\b Backend:\b0 Node.js, Express 4, Mongoose 8, Nodemailer 6\par
+\b Database:\b0 MongoDB Community or MongoDB Atlas\par
+\b Development Tools:\b0 VS Code, npm, Nodemon, Git\par
+\b Browser Support:\b0 Google Chrome, Microsoft Edge, Mozilla Firefox\par
+\par
+\b 8. Hardware Requirements\b0\par
+\b Processor:\b0 Intel Core i3 / AMD equivalent or above\par
+\b RAM:\b0 4 GB minimum, 8 GB recommended\par
+\b Storage:\b0 2 GB free disk space minimum\par
+\b Internet:\b0 Required for email alert delivery and cloud deployment\par
+\par
+\b 9. Database Requirements\b0\par
+The system uses MongoDB collections for Users, Students, Teacher Subjects, Class Schedules, Advisories, Student Progress, Leave Requests, Curriculum Plans, Timetables, Academic Approvals, Academic Records, Announcements, Campaigns, Calendar Events, Response Tracking, and Teacher/Academic Alerts.\par
+\par
+\b 10. Deployment Requirements\b0\par
+\pard\fi-360\li720
+\bullet Frontend may be deployed on Vercel.\par
+\bullet Backend may be deployed on Render or Railway.\par
+\bullet Cloud deployment requires a hosted MongoDB URI; localhost MongoDB is only for local development.\par
+\bullet Environment variables required: MONGODB_URI, DEFAULT_TENANT, MAIL_ALERT_EMAIL, MAIL_ALERT_APP_PASSWORD, MAIL_ALERT_FROM_NAME, and frontend API base URL.\par
+\pard\fi0\li0
+\par
+\b 11. Assumptions and Constraints\b0\par
+\pard\fi-360\li720
+\bullet The system assumes valid student email addresses are entered while creating student records.\par
+\bullet The system assumes Gmail app password configuration for email alert delivery.\par
+\bullet The current project uses a single tenant example, with tenant-ready routing for extension.\par
+\bullet The project currently focuses on ERP operations and not on online payment gateway integration.\par
+\pard\fi0\li0
+\par
+\b 12. Conclusion\b0\par
+AYRA ERP is a modular academic ERP solution that integrates student management, academic administration, timetable planning, communication workflows, and role-based email alerts into one centralized platform. The project is suitable for academic institutions seeking a lightweight but extensible ERP foundation.\par
+}

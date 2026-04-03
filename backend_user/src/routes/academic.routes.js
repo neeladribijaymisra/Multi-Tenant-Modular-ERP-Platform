@@ -2,12 +2,14 @@ import { Router } from "express";
 
 import {
   createAcademicAlert,
+  createTeacherAssignment,
   createApproval,
   createCurriculumPlan,
   createRecord,
   createTeacher,
   createTimetable,
   deleteAcademicAlert,
+  deleteTeacherAssignment,
   deleteApproval,
   deleteCurriculumPlan,
   deleteRecord,
@@ -18,8 +20,10 @@ import {
   listAcademicAlerts,
   listAcademicStudents,
   listApprovals,
+  listAttendanceRecords,
   listCurriculumPlans,
   listRecords,
+  listTeacherAssignments,
   listTeachers,
   listTimetables,
   updateAcademicStudent,
@@ -27,6 +31,7 @@ import {
   updateCurriculumPlan,
   updateRecord,
   updateTeacher,
+  updateTeacherAssignment,
   updateTimetable,
 } from "../controllers/academic.controller.js";
 
@@ -57,9 +62,15 @@ router.post("/teachers", createTeacher);
 router.put("/teachers/:id", updateTeacher);
 router.delete("/teachers/:id", deleteTeacher);
 
+router.get("/teacher-assignments", listTeacherAssignments);
+router.post("/teacher-assignments", createTeacherAssignment);
+router.put("/teacher-assignments/:id", updateTeacherAssignment);
+router.delete("/teacher-assignments/:id", deleteTeacherAssignment);
+
 router.get("/students", listAcademicStudents);
 router.put("/students/:id", updateAcademicStudent);
 router.delete("/students/:id", deleteAcademicStudent);
+router.get("/attendance", listAttendanceRecords);
 
 router.get("/leave-requests", listAcademicLeaveRequests);
 router.get("/alerts", listAcademicAlerts);
