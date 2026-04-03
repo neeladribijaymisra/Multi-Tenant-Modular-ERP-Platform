@@ -1,0 +1,14 @@
+[
+  {
+    "_id": "69cf9803f45ee4058227f036",
+    "tenantSlug": "cgu",
+    "title": "Hostel Maintenance Notice",
+    "content": "Water supply will be paused from 8 PM to 10 PM for maintenance.",
+    "audience": "Students",
+    "channel": "Portal + Email",
+    "status": "pending",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:47.195Z",
+    "updatedAt": "2026-04-03T10:35:47.195Z"
+  }
+]

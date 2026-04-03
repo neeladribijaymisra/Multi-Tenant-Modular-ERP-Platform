@@ -1,0 +1,44 @@
+[
+  {
+    "_id": "69cf9803f45ee4058227f03a",
+    "tenantSlug": "cgu",
+    "year": 2026,
+    "eventName": "Innovation Showcase",
+    "eventType": "Academic",
+    "venue": "Main Auditorium",
+    "eventDate": "2026-04-21",
+    "coordinator": "Communication Cell",
+    "audience": "All Students",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:47.197Z",
+    "updatedAt": "2026-04-03T10:35:47.197Z"
+  },
+  {
+    "_id": "69cf9803f45ee4058227f03b",
+    "tenantSlug": "cgu",
+    "year": 2026,
+    "eventName": "Semester 6 Hackathon",
+    "eventType": "Event",
+    "venue": "Innovation Lab",
+    "eventDate": "2026-04-28",
+    "coordinator": "Prof. Arjun Rao",
+    "audience": "Semester 6",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:47.197Z",
+    "updatedAt": "2026-04-03T10:35:47.197Z"
+  },
+  {
+    "_id": "69cf9803f45ee4058227f03c",
+    "tenantSlug": "cgu",
+    "year": 2027,
+    "eventName": "Semester Opening Assembly",
+    "eventType": "Communication",
+    "venue": "University Grounds",
+    "eventDate": "2027-01-12",
+    "coordinator": "Academic Office",
+    "audience": "All Students",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:47.197Z",
+    "updatedAt": "2026-04-03T10:35:47.197Z"
+  }
+]

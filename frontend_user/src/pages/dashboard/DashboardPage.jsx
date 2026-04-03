@@ -2,8 +2,10 @@ import { Alert, Button, Dialog, DialogActions, DialogContent, DialogTitle, MenuI
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 
+import AssignmentForm from "../../components/dashboard/AssignmentForm";
 import AttendanceSection from "../../components/dashboard/AttendanceSection";
 import CalendarSection from "../../components/dashboard/CalendarSection";
+import ChatBot from "../../components/dashboard/ChatBot";
 import DashboardCalendarWidget from "../../components/dashboard/DashboardCalendarWidget";
 import DashboardHero from "../../components/dashboard/DashboardHero";
 import PaymentNotice from "../../components/dashboard/PaymentNotice";
@@ -290,6 +292,7 @@ export default function DashboardPage() {
     offsetX: 0,
     offsetY: 0,
   });
+  const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
 
   const safeSession = session || {
     username: "",
@@ -415,6 +418,114 @@ export default function DashboardPage() {
     return [...values].sort();
   }, [activeRole.value, resources, studentProfile?.section]);
 
+  const assignmentClassOptions = useMemo(() => {
+    const classItems = filterItemsForSession(
+      { key: "classes" },
+      resources.classes || [],
+      safeSession,
+      resources,
+    );
+
+    const map = new Map();
+    classItems.forEach((item) => {
+      if (item?._id && !map.has(item._id)) {
+        map.set(item._id, item);
+      }
+    });
+
+    return [...map.values()];
+  }, [resources, safeSession]);
+
+  const assignmentStudentOptions = useMemo(() => {
+    const studentItems = filterItemsForSession(
+      { key: "students" },
+      resources.students || [],
+      safeSession,
+      resources,
+    );
+
+    const map = new Map();
+    studentItems.forEach((item) => {
+      if (item?._id && !map.has(item._id)) {
+        map.set(item._id, item);
+      }
+    });
+
+    return [...map.values()];
+  }, [resources, safeSession]);
+
+  const getSortOptions = (sectionKey, sectionItems = []) => {
+    const defaultOptions = [{ key: "default", label: "Default" }];
+    const hasSemesterData = sectionItems.some(
+      (item) => item?.semester !== undefined && item?.semester !== null && item?.semester !== "",
+    );
+
+    switch (sectionKey) {
+      case "students":
+      case "studentRegistry":
+      case "communicationStudents":
+      case "profile":
+        return [
+          ...defaultOptions,
+          { key: "name", label: "Name" },
+          { key: "cgpa", label: "CGPA" },
+          ...(hasSemesterData
+            ? [
+                { key: "semester-asc", label: "Semester Asc" },
+                { key: "semester-desc", label: "Semester Desc" },
+              ]
+            : []),
+        ];
+      case "teachers":
+        return [
+          ...defaultOptions,
+          { key: "name", label: "Name" },
+          { key: "department", label: "Department" },
+        ];
+      case "classes":
+        return [
+          ...defaultOptions,
+          { key: "day", label: "Day" },
+          { key: "startTime", label: "Start Time" },
+          { key: "subject", label: "Subject" },
+          ...(hasSemesterData
+            ? [
+                { key: "semester-asc", label: "Semester Asc" },
+                { key: "semester-desc", label: "Semester Desc" },
+              ]
+            : []),
+        ];
+      case "progress":
+        return [
+          ...defaultOptions,
+          { key: "marks", label: "Marks" },
+          { key: "grade", label: "Grade" },
+          { key: "subject", label: "Subject" },
+        ];
+      case "attendance":
+        return [
+          ...defaultOptions,
+          { key: "date", label: "Date" },
+          { key: "status", label: "Status" },
+        ];
+      case "assignments":
+        return [
+          ...defaultOptions,
+          { key: "dueDate", label: "Due Date" },
+          { key: "title", label: "Title" },
+        ];
+      case "hostelRooms":
+      case "hostelAllocations":
+        return [
+          ...defaultOptions,
+          { key: "boys-hostel", label: "Boys Hostel" },
+          { key: "girls-hostel", label: "Girls Hostel" },
+        ];
+      default:
+        return defaultOptions;
+    }
+  };
+
   useEffect(() => {
     if (!availableModules.includes(activeModule)) {
       setActiveModule("Dashboard");
@@ -523,6 +634,20 @@ export default function DashboardPage() {
     );
     await fetchSection(section);
     return result;
+  }
+
+  async function handleCreateAssignment(formData) {
+    try {
+      await createCollectionItem(tenant || safeSession.tenantSlug || "cgu", "assignments", {
+        ...formData,
+        teacherId: safeSession.username,
+        teacherName: safeSession.displayName,
+      });
+      setAssignmentDialogOpen(false);
+      // Refresh assignments if needed
+    } catch (error) {
+      console.error("Failed to create assignment:", error);
+    }
   }
 
   async function handleUpdate(section, id, payload) {
@@ -666,6 +791,12 @@ export default function DashboardPage() {
 
   function handleAction(actionLabel) {
     const normalized = actionLabel.toLowerCase();
+
+    if (normalized.includes("assignment")) {
+      setAssignmentDialogOpen(true);
+      return;
+    }
+
     const actionTargets = [
       { keywords: ["student"], sectionKey: "students" },
       { keywords: ["class"], sectionKey: "classes" },
@@ -760,13 +891,15 @@ export default function DashboardPage() {
         const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
         const leftDayIndex = dayOrder.indexOf(left.day);
         const rightDayIndex = dayOrder.indexOf(right.day);
-        if (leftDayIndex !== rightDayIndex) {
+        if ((sortBy === "default" || sortBy === "day") && leftDayIndex !== rightDayIndex) {
           return leftDayIndex - rightDayIndex;
         }
 
-        const timeDelta = String(left.startTime || "").localeCompare(String(right.startTime || ""));
-        if (timeDelta !== 0) {
-          return timeDelta;
+        if (sortBy === "default" || sortBy === "startTime" || sortBy === "day") {
+          const timeDelta = String(left.startTime || "").localeCompare(String(right.startTime || ""));
+          if (timeDelta !== 0) {
+            return timeDelta;
+          }
         }
       }
 
@@ -779,6 +912,61 @@ export default function DashboardPage() {
       }
 
       if (sortBy !== "default" && !["boys-hostel", "girls-hostel"].includes(sortBy)) {
+        if (sortBy === "name") {
+          return String(left.fullName || left.studentName || left.title || "")
+            .localeCompare(String(right.fullName || right.studentName || right.title || ""));
+        }
+
+        if (sortBy === "department") {
+          const departmentDelta = String(left.department || "").localeCompare(String(right.department || ""));
+          if (departmentDelta !== 0) {
+            return departmentDelta;
+          }
+        }
+
+        if (sortBy === "subject") {
+          const subjectDelta = String(left.subjectName || left.className || left.subjectCode || "")
+            .localeCompare(String(right.subjectName || right.className || right.subjectCode || ""));
+          if (subjectDelta !== 0) {
+            return subjectDelta;
+          }
+        }
+
+        if (sortBy === "date" || sortBy === "dueDate") {
+          const dateDelta = String(left.date || left.dueDate || "").localeCompare(String(right.date || right.dueDate || ""));
+          if (dateDelta !== 0) {
+            return dateDelta;
+          }
+        }
+
+        if (sortBy === "title") {
+          const titleDelta = String(left.title || left.eventName || "").localeCompare(String(right.title || right.eventName || ""));
+          if (titleDelta !== 0) {
+            return titleDelta;
+          }
+        }
+
+        if (sortBy === "status") {
+          const statusDelta = String(left.status || left.deliveryStatus || "").localeCompare(String(right.status || right.deliveryStatus || ""));
+          if (statusDelta !== 0) {
+            return statusDelta;
+          }
+        }
+
+        if (sortBy === "semester-asc") {
+          const semesterDelta = Number(left.semester || 0) - Number(right.semester || 0);
+          if (semesterDelta !== 0) {
+            return semesterDelta;
+          }
+        }
+
+        if (sortBy === "semester-desc") {
+          const semesterDelta = Number(right.semester || 0) - Number(left.semester || 0);
+          if (semesterDelta !== 0) {
+            return semesterDelta;
+          }
+        }
+
         const getMetric = (item, metric) => {
           const studentId = item.studentId;
           const metrics = studentMetricLookup.get(studentId) || {};
@@ -1141,6 +1329,9 @@ export default function DashboardPage() {
         key={section.key}
         section={hydratedSection}
         items={visibleItems}
+        session={safeSession}
+        allResources={resources}
+        progressSection={sections.find((item) => item.key === "progress") || null}
         loading={Boolean(loadingMap[section.key])}
         error={resourceErrors[section.key]}
         onRefresh={fetchSection}
@@ -1238,9 +1429,11 @@ export default function DashboardPage() {
                 size="small"
                 sx={{ minWidth: { xs: 150, lg: 155 } }}
               >
-                <MenuItem key="default" value="default">Default</MenuItem>
-                <MenuItem key="boys-hostel" value="boys-hostel">Boys Hostel</MenuItem>
-                <MenuItem key="girls-hostel" value="girls-hostel">Girls Hostel</MenuItem>
+                {getSortOptions(selectedSectionKey, resources[selectedSectionKey] || []).map((option) => (
+                  <MenuItem key={option.key} value={option.key}>
+                    {option.label}
+                  </MenuItem>
+                ))}
               </TextField>
               {activeRole.value === "student" ? (
                 <Button variant="contained" onClick={() => setActiveModule("Attendance")}>
@@ -1335,6 +1528,15 @@ export default function DashboardPage() {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <AssignmentForm
+        open={assignmentDialogOpen}
+        onClose={() => setAssignmentDialogOpen(false)}
+        onSubmit={handleCreateAssignment}
+        classes={assignmentClassOptions}
+        students={assignmentStudentOptions}
+      />
+      <ChatBot tenantSlug={tenant} />
     </AppShell>
   );
 }

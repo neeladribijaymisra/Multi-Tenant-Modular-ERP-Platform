@@ -1,0 +1,28 @@
+[
+  {
+    "_id": "69cf9803f45ee4058227e99c",
+    "tenantSlug": "cgu",
+    "program": "B.Tech CSE",
+    "semester": 6,
+    "title": "Outcome-based revision 2026",
+    "status": "pending",
+    "revision": "R2",
+    "owner": "Academic Office",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:47.085Z",
+    "updatedAt": "2026-04-03T10:35:47.085Z"
+  },
+  {
+    "_id": "69cf9803f45ee4058227e99d",
+    "tenantSlug": "cgu",
+    "program": "B.Tech ECE",
+    "semester": 4,
+    "title": "Communication systems lab alignment",
+    "status": "accept",
+    "revision": "R1",
+    "owner": "Academic Office",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:47.085Z",
+    "updatedAt": "2026-04-03T10:35:47.085Z"
+  }
+]

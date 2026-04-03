@@ -78,7 +78,7 @@ export const roleContent = {
       { time: "10:00", title: "Operating Systems Lecture", meta: "Seminar Hall 2" },
       { time: "15:30", title: "Project Viva Panel", meta: "Lab Complex" },
     ],
-    actions: ["Add student", "Create class slot", "Send alert"],
+    actions: ["Add student", "Create class slot", "Send alert", "Create assignment"],
     tableTitle: "Teacher Operations",
     tableRows: [
       ["New Student Intake", "Pending", "Approve and assign section", "Teacher"],

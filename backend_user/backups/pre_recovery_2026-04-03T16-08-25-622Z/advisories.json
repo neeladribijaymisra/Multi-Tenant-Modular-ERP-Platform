@@ -1,0 +1,26 @@
+[
+  {
+    "_id": "69cf97f9f45ee4058226a13c",
+    "tenantSlug": "cgu",
+    "title": "Semester Preparation Advisory",
+    "message": "Students should verify their section-wise timetable and complete all lab submissions before mid-semester reviews.",
+    "teacherName": "Prof. Arjun Rao",
+    "targetAudience": "All Even Semester Students",
+    "publishedAt": "2026-04-03T10:35:37.577Z",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:37.578Z",
+    "updatedAt": "2026-04-03T10:35:37.578Z"
+  },
+  {
+    "_id": "69cf97f9f45ee4058226a13d",
+    "tenantSlug": "cgu",
+    "title": "Project Readiness",
+    "message": "Final year students must submit project abstracts and mentor allocation forms this week.",
+    "teacherName": "Prof. Kavya Iyer",
+    "targetAudience": "Semester 8",
+    "publishedAt": "2026-04-03T10:35:37.578Z",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:37.578Z",
+    "updatedAt": "2026-04-03T10:35:37.578Z"
+  }
+]

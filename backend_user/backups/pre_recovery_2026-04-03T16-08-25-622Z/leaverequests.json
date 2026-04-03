@@ -1,0 +1,30 @@
+[
+  {
+    "_id": "69cf9803f45ee4058227e999",
+    "tenantSlug": "cgu",
+    "studentName": "Karan Patel 101",
+    "studentId": "2301020101",
+    "fromDate": "2026-04-08",
+    "toDate": "2026-04-09",
+    "reason": "Medical consultation",
+    "status": "pending",
+    "rejectReason": "",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:47.083Z",
+    "updatedAt": "2026-04-03T10:35:47.083Z"
+  },
+  {
+    "_id": "69cf9803f45ee4058227e99a",
+    "tenantSlug": "cgu",
+    "studentName": "Sneha Mishra 108",
+    "studentId": "2301020108",
+    "fromDate": "2026-04-11",
+    "toDate": "2026-04-12",
+    "reason": "Family function",
+    "status": "accept",
+    "rejectReason": "",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:47.083Z",
+    "updatedAt": "2026-04-03T10:35:47.083Z"
+  }
+]

@@ -1,0 +1,14 @@
+[
+  {
+    "_id": "69cf9803f45ee4058227f03e",
+    "tenantSlug": "cgu",
+    "sourceType": "Email Campaign",
+    "title": "Placement Readiness Week",
+    "responseRate": 74,
+    "escalations": 4,
+    "notes": "Strong response from final year students",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:47.198Z",
+    "updatedAt": "2026-04-03T10:35:47.198Z"
+  }
+]

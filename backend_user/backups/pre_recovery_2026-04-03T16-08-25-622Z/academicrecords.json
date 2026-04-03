@@ -1,0 +1,26 @@
+[
+  {
+    "_id": "69cf9803f45ee4058227f033",
+    "tenantSlug": "cgu",
+    "recordType": "Accreditation",
+    "referenceNo": "AYRA-REC-001",
+    "title": "NAAC Evidence Mapping",
+    "owner": "Academic Office",
+    "notes": "Updated with 2026 semester files",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:47.193Z",
+    "updatedAt": "2026-04-03T10:35:47.193Z"
+  },
+  {
+    "_id": "69cf9803f45ee4058227f034",
+    "tenantSlug": "cgu",
+    "recordType": "Compliance",
+    "referenceNo": "AYRA-REC-002",
+    "title": "Lab Audit Summary",
+    "owner": "Quality Cell",
+    "notes": "Mechanical and ECE lab review synchronized for even semester cycle.",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:47.194Z",
+    "updatedAt": "2026-04-03T10:35:47.194Z"
+  }
+]

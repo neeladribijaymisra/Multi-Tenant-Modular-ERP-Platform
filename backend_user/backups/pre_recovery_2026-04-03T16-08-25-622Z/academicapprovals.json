@@ -1,0 +1,26 @@
+[
+  {
+    "_id": "69cf9803f45ee4058227f030",
+    "tenantSlug": "cgu",
+    "itemType": "Curriculum Revision",
+    "title": "CSE Semester 6 elective basket",
+    "status": "pending",
+    "requestedBy": "Board of Studies",
+    "approvedBy": "",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:47.191Z",
+    "updatedAt": "2026-04-03T10:35:47.191Z"
+  },
+  {
+    "_id": "69cf9803f45ee4058227f031",
+    "tenantSlug": "cgu",
+    "itemType": "Assessment Pattern",
+    "title": "Semester 8 capstone evaluation",
+    "status": "accept",
+    "requestedBy": "Academic Council",
+    "approvedBy": "Dean Academics",
+    "__v": 0,
+    "createdAt": "2026-04-03T10:35:47.191Z",
+    "updatedAt": "2026-04-03T10:35:47.191Z"
+  }
+]

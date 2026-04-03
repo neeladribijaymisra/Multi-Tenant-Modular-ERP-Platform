@@ -1,0 +1,24 @@
+[
+  {
+    "_id": "69cf997e90ef4197a0a03933",
+    "tenantSlug": "cgu",
+    "studentId": "2301020102",
+    "studentName": "Meera Das 102",
+    "department": "CSE",
+    "semester": 2,
+    "section": "A",
+    "roomCode": "BH1-F1-R103",
+    "hostelName": "Boys Hostel 1",
+    "hostelCategory": "Boys",
+    "floorNumber": 1,
+    "roomNumber": "103",
+    "roomType": "Non AC 2 Bed",
+    "bedNumber": "Bed 1",
+    "annualFee": 92000,
+    "paymentStatus": "Installment",
+    "allocationStatus": "Active",
+    "createdAt": "2026-04-03T10:42:06.726Z",
+    "updatedAt": "2026-04-03T10:42:06.726Z",
+    "__v": 0
+  }
+]
