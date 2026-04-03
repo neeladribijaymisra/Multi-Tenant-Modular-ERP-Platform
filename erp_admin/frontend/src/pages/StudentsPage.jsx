@@ -5,11 +5,12 @@ import {
   Select, MenuItem, FormControl, InputLabel, Pagination, Tooltip,
   CircularProgress, Alert,
 } from '@mui/material';
-import { Search, Add, FilterList, Download, Edit, Delete, Visibility, People, School, CheckCircle, Cancel } from '@mui/icons-material';
-import api from '../utils/api';
-import { getInitials, stringToColor, debounce } from '../utils/helpers';
+import { Search, Add, Download, Edit, Delete, People, School, CheckCircle, Cancel } from '@mui/icons-material';
+import api, { createStudent } from '../utils/api';
+import { getInitials, stringToColor } from '../utils/helpers';
 import { DEPARTMENTS, YEARS } from '../utils/constants';
 import FormDialog from '../components/common/FormDialog';
+import AddStudentDialog from '../components/common/AddStudentDialog';
 
 const ITEMS_PER_PAGE = 10;
 
@@ -24,12 +25,13 @@ export default function StudentsPage() {
   const [deptFilter, setDeptFilter] = useState('');
   const [yearFilter, setYearFilter] = useState('');
   const [page, setPage] = useState(1);
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [dialog, setDialog] = useState({ open: false, mode: 'add', data: null });
   const [form, setForm] = useState(emptyForm);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
 
-  const fetchStudents = useCallback(async (q = search, dept = deptFilter, yr = yearFilter, pg = page) => {
+  const fetchStudents = useCallback(async (q = '', dept = '', yr = '', pg = 1) => {
     setLoading(true);
     try {
       const params = { page: pg, limit: ITEMS_PER_PAGE };
@@ -50,29 +52,56 @@ export default function StudentsPage() {
     } catch { /* silent */ }
   }, []);
 
-  useEffect(() => { fetchStudents(); fetchStats(); }, []);
+  useEffect(() => {
+    fetchStudents('', '', '', 1);
+    fetchStats();
+  }, [fetchStats, fetchStudents]);
 
-  const debouncedSearch = useCallback(debounce((val) => { setPage(1); fetchStudents(val, deptFilter, yearFilter, 1); }, 400), [deptFilter, yearFilter]);
-
-  const handleSearch = (e) => { setSearch(e.target.value); debouncedSearch(e.target.value); };
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearch(value);
+    setPage(1);
+    fetchStudents(value, deptFilter, yearFilter, 1);
+  };
   const handleDept = (e) => { setDeptFilter(e.target.value); setPage(1); fetchStudents(search, e.target.value, yearFilter, 1); };
   const handleYear = (e) => { setYearFilter(e.target.value); setPage(1); fetchStudents(search, deptFilter, e.target.value, 1); };
   const handlePage = (_, v) => { setPage(v); fetchStudents(search, deptFilter, yearFilter, v); };
 
-  const openAdd = () => { setForm(emptyForm); setDialog({ open: true, mode: 'add', data: null }); };
+  const openAdd = () => { setError(''); setAddDialogOpen(true); };
   const openEdit = (s) => { setForm({ name: s.name, email: s.email, phone: s.phone || '', rollNo: s.rollNo, department: s.department, year: s.year, status: s.status, feeStatus: s.feeStatus, cgpa: s.cgpa || '' }); setDialog({ open: true, mode: 'edit', data: s }); };
   const closeDialog = () => { setDialog({ open: false, mode: 'add', data: null }); setError(''); };
+  const handleEnrollmentSuccess = async () => {
+    await Promise.all([
+      fetchStudents(search, deptFilter, yearFilter, page),
+      fetchStats(),
+    ]);
+  };
+
+  const handleCreateStudent = async (data) => {
+    setSaving(true);
+    setError('');
+    try {
+      await createStudent({
+        ...data,
+        cgpa: data.cgpa === '' ? undefined : data.cgpa,
+      });
+      setAddDialogOpen(false);
+      await handleEnrollmentSuccess();
+      return true;
+    } catch (err) {
+      setError(err.response?.data?.message || 'Failed to create student.');
+      return false;
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const handleSave = async () => {
     setSaving(true); setError('');
     try {
-      if (dialog.mode === 'add') {
-        await api.post('/students', form);
-      } else {
-        await api.put(`/students/${dialog.data._id}`, form);
-      }
+      await api.put(`/students/${dialog.data._id}`, form);
       closeDialog();
-      fetchStudents();
+      fetchStudents(search, deptFilter, yearFilter, page);
       fetchStats();
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to save student.');
@@ -83,7 +112,7 @@ export default function StudentsPage() {
     if (!window.confirm('Delete this student?')) return;
     try {
       await api.delete(`/students/${id}`);
-      fetchStudents();
+      fetchStudents(search, deptFilter, yearFilter, page);
       fetchStats();
     } catch { setError('Failed to delete student.'); }
   };
@@ -104,7 +133,7 @@ export default function StudentsPage() {
         </div>
         <div className="flex gap-2.5">
           <Button variant="outlined" size="small" startIcon={<Download />} sx={{ borderColor: '#e2e8f0', color: '#475569' }}>Export</Button>
-          <Button variant="contained" size="small" startIcon={<Add />} onClick={openAdd}>Add Student</Button>
+          <Button variant="contained" size="small" startIcon={<Add />} onClick={openAdd}>Add Students</Button>
         </div>
       </div>
 
@@ -173,16 +202,28 @@ export default function StudentsPage() {
                 <TableRow key={s._id} hover sx={{ '&:hover': { bgcolor: '#fafbff' } }}>
                   <TableCell>
                     <div className="flex items-center gap-3">
-                      <Avatar sx={{ width: 36, height: 36, bgcolor: stringToColor(s.name), fontSize: 14, fontWeight: 700 }}>{getInitials(s.name)}</Avatar>
+                      <Avatar src={s.avatar || ''} sx={{ width: 36, height: 36, bgcolor: stringToColor(s.name), fontSize: 14, fontWeight: 700 }}>
+                        {getInitials(s.name)}
+                      </Avatar>
                       <div>
                         <p className="font-semibold text-sm text-slate-800">{s.name}</p>
-                        <p className="text-xs text-slate-400">{s.email}</p>
+                        <p className="text-xs text-slate-400">{s.programName || s.email}</p>
                       </div>
                     </div>
                   </TableCell>
                   <TableCell><span className="font-mono text-xs font-medium text-slate-600 bg-slate-50 px-2 py-1 rounded-md">{s.rollNo}</span></TableCell>
-                  <TableCell><span className="text-xs font-medium text-slate-700">{s.department}</span></TableCell>
-                  <TableCell><span className="text-sm text-slate-700">{s.year}</span></TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs font-medium text-slate-700">{s.department}</span>
+                      {s.section ? <span className="text-[11px] text-slate-400">Section {s.section}</span> : null}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-sm text-slate-700">{s.year}</span>
+                      {s.semester ? <span className="text-[11px] text-slate-400">Semester {s.semester}</span> : null}
+                    </div>
+                  </TableCell>
                   <TableCell><span className="font-semibold text-slate-800 text-sm">{s.cgpa || '—'}</span></TableCell>
                   <TableCell>
                     <Chip label={s.feeStatus} size="small" sx={{ bgcolor: s.feeStatus === 'Paid' ? '#ecfdf5' : s.feeStatus === 'Overdue' ? '#fef2f2' : '#fff7ed', color: s.feeStatus === 'Paid' ? '#059669' : s.feeStatus === 'Overdue' ? '#ef4444' : '#d97706', fontWeight: 600, fontSize: '0.7rem', height: 22 }} />
@@ -207,16 +248,16 @@ export default function StudentsPage() {
         </div>
       </div>
 
-      {/* Add/Edit Dialog */}
+      {/* Edit Dialog */}
       <FormDialog
         open={dialog.open}
         onClose={closeDialog}
-        title={dialog.mode === 'add' ? 'Add Student' : 'Edit Student'}
-        subtitle="Capture student identity, academic details, and status in one clean form."
+        title="Edit Student"
+        subtitle="Update registry details for an existing student record."
         error={error}
         onPrimary={handleSave}
         primaryDisabled={saving || !form.name || !form.rollNo || !form.email}
-        primaryLabel={dialog.mode === 'add' ? 'Add Student' : 'Save Changes'}
+        primaryLabel="Save Changes"
         loading={saving}
       >
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -245,6 +286,7 @@ export default function StudentsPage() {
             <TextField label="CGPA" value={form.cgpa} onChange={(e) => setForm({ ...form, cgpa: e.target.value })} size="small" fullWidth type="number" inputProps={{ step: 0.1, min: 0, max: 10 }} />
           </div>
       </FormDialog>
+      <AddStudentDialog open={addDialogOpen} onClose={() => { setAddDialogOpen(false); setError(''); }} onSubmit={handleCreateStudent} loading={saving} error={error} />
     </div>
   );
 }

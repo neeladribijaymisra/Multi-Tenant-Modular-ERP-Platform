@@ -1,0 +1,16 @@
+frontend\src
+frontend\src\components
+frontend\src\context
+frontend\src\hooks
+frontend\src\pages
+frontend\src\theme
+frontend\src\utils
+frontend\src\{components
+backend\src
+backend\src\config
+backend\src\controllers
+backend\src\middleware
+backend\src\models
+backend\src\routes
+backend\src\utils
+backend\src\validators

@@ -40,3 +40,8 @@ api.interceptors.response.use(
 );
 
 export default api;
+
+export const createStudent = async (payload) => {
+  const { data } = await api.post('/students', payload);
+  return data;
+};
