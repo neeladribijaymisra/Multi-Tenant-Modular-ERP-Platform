@@ -14,6 +14,7 @@ const IMAGE_TYPES = new Set(['image/jpeg', 'image/png']);
 const DOCUMENT_TYPES = new Set(['application/pdf', 'image/jpeg', 'image/png']);
 const MAX_IMAGE_SIZE = 2 * 1024 * 1024;
 const MAX_DOCUMENT_SIZE = 5 * 1024 * 1024;
+const REQUIRED_DOCUMENT_TYPES = ['Previous Transcript', 'ID Proof', 'Medical Certificate'];
 
 const PROGRAM_CATALOG = [
   { id: 'btech-cse', name: 'B.Tech Computer Science', department: 'Computer Science', durationYears: 4, feePerSemester: 85000 },
@@ -60,11 +61,17 @@ const validateDocuments = (documents = []) => {
   return null;
 };
 
+const findMissingRequiredDocuments = (documents = []) => REQUIRED_DOCUMENT_TYPES.filter((type) => (
+  !documents.some((document) => document?.type === type && document?.file?.content)
+));
+
 const normalizeDraftPayload = (payload = {}) => ({
   personalDetails: {
     fullLegalName: payload.personalDetails?.fullLegalName || '',
+    preferredName: payload.personalDetails?.preferredName || '',
     rollNumber: payload.personalDetails?.rollNumber?.toUpperCase?.() || '',
     dateOfBirth: payload.personalDetails?.dateOfBirth || null,
+    gender: payload.personalDetails?.gender || '',
     email: payload.personalDetails?.email || '',
     phone: payload.personalDetails?.phone || '',
   },
@@ -74,8 +81,22 @@ const normalizeDraftPayload = (payload = {}) => ({
     department: payload.academicInfo?.department || '',
     year: payload.academicInfo?.year || '',
     semester: payload.academicInfo?.semester ? Number(payload.academicInfo.semester) : null,
+    section: payload.academicInfo?.section || 'A',
+    admissionDate: payload.academicInfo?.admissionDate || null,
     feePerSemester: payload.academicInfo?.feePerSemester ? Number(payload.academicInfo.feePerSemester) : 0,
     durationYears: payload.academicInfo?.durationYears ? Number(payload.academicInfo.durationYears) : 0,
+  },
+  contactInfo: {
+    guardianName: payload.contactInfo?.guardianName || '',
+    guardianRelation: payload.contactInfo?.guardianRelation || '',
+    guardianPhone: payload.contactInfo?.guardianPhone || '',
+    guardianEmail: payload.contactInfo?.guardianEmail || '',
+  },
+  address: {
+    street: payload.address?.street || '',
+    city: payload.address?.city || '',
+    state: payload.address?.state || '',
+    pincode: payload.address?.pincode || '',
   },
   profilePhoto: payload.profilePhoto?.content ? sanitizeAsset(payload.profilePhoto) : undefined,
   documents: Array.isArray(payload.documents)
@@ -96,6 +117,9 @@ const buildStudentFromEnrollment = (payload, draftId = null) => {
     email: normalized.personalDetails.email || `${normalized.personalDetails.rollNumber.toLowerCase()}@university.edu`,
     phone: normalized.personalDetails.phone,
     dateOfBirth: normalized.personalDetails.dateOfBirth,
+    gender: ['Male', 'Female', 'Other'].includes(normalized.personalDetails.gender)
+      ? normalized.personalDetails.gender
+      : undefined,
     avatar: normalized.profilePhoto?.content || null,
     avatarMeta: normalized.profilePhoto?.content ? {
       name: normalized.profilePhoto.name,
@@ -107,10 +131,24 @@ const buildStudentFromEnrollment = (payload, draftId = null) => {
     department: normalized.academicInfo.department,
     year: normalized.academicInfo.year,
     semester: normalized.academicInfo.semester,
+    section: normalized.academicInfo.section || 'A',
+    admissionDate: normalized.academicInfo.admissionDate || undefined,
     programId: normalized.academicInfo.programId,
     programName: normalized.academicInfo.programName,
     feePerSemester: normalized.academicInfo.feePerSemester,
     durationYears: normalized.academicInfo.durationYears,
+    guardian: {
+      name: normalized.contactInfo.guardianName,
+      relation: normalized.contactInfo.guardianRelation,
+      phone: normalized.contactInfo.guardianPhone,
+      email: normalized.contactInfo.guardianEmail,
+    },
+    address: {
+      street: normalized.address.street,
+      city: normalized.address.city,
+      state: normalized.address.state,
+      pincode: normalized.address.pincode,
+    },
     documents: normalized.documents
       .filter((document) => document.file?.content)
       .map((document) => ({
@@ -125,6 +163,35 @@ const buildStudentFromEnrollment = (payload, draftId = null) => {
   };
 };
 
+const buildStudentFromQuickEntry = (payload = {}) => {
+  const fullName = (payload.fullName || '').trim();
+  const rollNumber = (payload.rollNumber || '').trim().toUpperCase();
+  const programId = (payload.courseSelection || '').trim();
+  const program = PROGRAM_CATALOG.find((item) => item.id === programId || item.name === programId);
+  const semester = Number(payload.currentSemester) || 1;
+  const derivedYear = semester <= 2 ? '1st Year' : semester <= 4 ? '2nd Year' : semester <= 6 ? '3rd Year' : '4th Year';
+  const safeEmailBase = rollNumber.toLowerCase().replace(/[^a-z0-9-]/g, '');
+
+  return {
+    rollNo: rollNumber,
+    name: fullName,
+    email: `${safeEmailBase || 'student'}@university.edu`,
+    dateOfBirth: payload.dateOfBirth || undefined,
+    department: program?.department || 'Computer Science',
+    year: derivedYear,
+    semester,
+    section: 'A',
+    admissionDate: new Date(),
+    programId: program?.id || programId,
+    programName: program?.name || payload.courseSelection || '',
+    feePerSemester: program?.feePerSemester || 0,
+    durationYears: program?.durationYears || 4,
+    status: 'Active',
+    feeStatus: 'Pending',
+    enrollmentSource: 'academics-quick-entry',
+  };
+};
+
 const validateEnrollmentPayload = async (payload) => {
   const normalized = normalizeDraftPayload(payload);
   const errors = {};
@@ -136,21 +203,44 @@ const validateEnrollmentPayload = async (payload) => {
   if (!normalized.personalDetails.dateOfBirth || Number.isNaN(new Date(normalized.personalDetails.dateOfBirth).getTime())) {
     errors.dateOfBirth = 'Valid date of birth is required.';
   }
+  if (!normalized.personalDetails.email.trim()) errors.email = 'Email is required.';
+  if (normalized.personalDetails.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalized.personalDetails.email)) {
+    errors.email = 'Enter a valid email address.';
+  }
+  if (!normalized.personalDetails.phone.trim()) errors.phone = 'Phone number is required.';
 
   if (!normalized.academicInfo.programName.trim()) errors.programName = 'Program selection is required.';
   if (!normalized.academicInfo.department.trim()) errors.department = 'Department is required.';
   if (!normalized.academicInfo.year) errors.year = 'Academic year is required.';
   if (!normalized.academicInfo.semester) errors.semester = 'Semester selection is required.';
+  if (!normalized.academicInfo.section.trim()) errors.section = 'Section is required.';
+  if (!normalized.academicInfo.admissionDate || Number.isNaN(new Date(normalized.academicInfo.admissionDate).getTime())) {
+    errors.admissionDate = 'Valid admission date is required.';
+  }
+
+  if (!normalized.contactInfo.guardianName.trim()) errors.guardianName = 'Guardian name is required.';
+  if (!normalized.contactInfo.guardianPhone.trim()) errors.guardianPhone = 'Guardian phone is required.';
+  if (!normalized.address.city.trim()) errors.city = 'City is required.';
+  if (!normalized.address.state.trim()) errors.state = 'State is required.';
 
   const profilePhotoError = validateProfilePhoto(normalized.profilePhoto);
   if (profilePhotoError) errors.profilePhoto = profilePhotoError;
 
   const documentError = validateDocuments(normalized.documents);
   if (documentError) errors.documents = documentError;
+  const missingDocuments = findMissingRequiredDocuments(normalized.documents);
+  if (!errors.documents && missingDocuments.length > 0) {
+    errors.documents = `Upload all required documents: ${missingDocuments.join(', ')}.`;
+  }
 
   if (!errors.rollNumber) {
     const existingRoll = await Student.findOne({ rollNo: normalized.personalDetails.rollNumber }).lean();
     if (existingRoll) errors.rollNumber = 'Roll number already exists.';
+  }
+
+  if (!errors.email) {
+    const existingEmail = await Student.findOne({ email: normalized.personalDetails.email.toLowerCase() }).lean();
+    if (existingEmail) errors.email = 'Email already exists.';
   }
 
   return { normalized, errors };
@@ -298,6 +388,40 @@ export const updateStudentRegistry = async (req, res, next) => {
     const student = await Student.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
     if (!student) return sendError(res, 'Student not found.', 404);
     return sendSuccess(res, { student }, 'Student registry updated successfully');
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createStudentRegistryEntry = async (req, res, next) => {
+  try {
+    const fullName = (req.body.fullName || '').trim();
+    const rollNumber = (req.body.rollNumber || '').trim().toUpperCase();
+    const dateOfBirth = req.body.dateOfBirth;
+    const courseSelection = (req.body.courseSelection || '').trim();
+    const currentSemester = Number(req.body.currentSemester);
+
+    if (!fullName) return sendError(res, 'Full name is required.', 400);
+    if (!rollNumber) return sendError(res, 'Roll number is required.', 400);
+    if (!ROLL_NUMBER_PATTERN.test(rollNumber)) return sendError(res, 'Roll number format is invalid.', 400);
+    if (!dateOfBirth || Number.isNaN(new Date(dateOfBirth).getTime())) return sendError(res, 'Valid date of birth is required.', 400);
+    if (!courseSelection) return sendError(res, 'Course selection is required.', 400);
+    if (!Number.isInteger(currentSemester) || currentSemester < 1 || currentSemester > 8) {
+      return sendError(res, 'Current semester must be between 1 and 8.', 400);
+    }
+
+    const existingStudent = await Student.findOne({ rollNo: rollNumber }).lean();
+    if (existingStudent) return sendError(res, 'Roll number already exists.', 400, { rollNumber: 'Roll number already exists.' });
+
+    const student = await Student.create(buildStudentFromQuickEntry({
+      fullName,
+      rollNumber,
+      dateOfBirth,
+      courseSelection,
+      currentSemester,
+    }));
+
+    return sendSuccess(res, { student }, 'Student created successfully from academics.', 201);
   } catch (error) {
     next(error);
   }

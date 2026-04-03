@@ -9,6 +9,7 @@ import {
   deleteTeacherAccount,
   generateTeacherPassword,
   getStudentRegistry,
+  createStudentRegistryEntry,
   updateStudentRegistry,
   getTeacherRegistry,
   getEnrollmentPrograms,
@@ -101,15 +102,25 @@ const enrollmentValidation = [
   body('personalDetails.fullLegalName').trim().notEmpty().withMessage('Full legal name is required'),
   body('personalDetails.rollNumber').trim().matches(/^[A-Z0-9-]{5,20}$/i).withMessage('Roll number format is invalid'),
   body('personalDetails.dateOfBirth').isISO8601().withMessage('Valid date of birth is required'),
+  body('personalDetails.email').trim().isEmail().withMessage('Valid email is required'),
+  body('personalDetails.phone').trim().notEmpty().withMessage('Phone number is required'),
+  body('personalDetails.gender').optional({ values: 'falsy' }).isIn(['Male', 'Female', 'Other', 'Prefer not to say']).withMessage('Invalid gender'),
   body('academicInfo.programName').trim().notEmpty().withMessage('Program is required'),
   body('academicInfo.department').trim().notEmpty().withMessage('Department is required'),
   body('academicInfo.year').isIn(['1st Year', '2nd Year', '3rd Year', '4th Year']).withMessage('Year is required'),
   body('academicInfo.semester').isInt({ min: 1, max: 8 }).withMessage('Semester is required'),
+  body('academicInfo.section').trim().notEmpty().withMessage('Section is required'),
+  body('academicInfo.admissionDate').isISO8601().withMessage('Valid admission date is required'),
+  body('contactInfo.guardianName').trim().notEmpty().withMessage('Guardian name is required'),
+  body('contactInfo.guardianPhone').trim().notEmpty().withMessage('Guardian phone is required'),
+  body('address.city').trim().notEmpty().withMessage('City is required'),
+  body('address.state').trim().notEmpty().withMessage('State is required'),
 ];
 
 router.get('/overview', getAcademicsOverview);
 router.get('/registries/summary', getRegistrySummary);
 router.get('/registries/students', getStudentRegistry);
+router.post('/registries/students', createStudentRegistryEntry);
 router.put('/registries/students/:id', updateStudentRegistry);
 router.get('/registries/teachers', getTeacherRegistry);
 router.get('/enrollment/programs', getEnrollmentPrograms);
