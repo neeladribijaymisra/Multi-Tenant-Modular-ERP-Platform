@@ -9,13 +9,14 @@ import {
 import {
   Dashboard, People, School, MenuBook, AccountBalance,
   Forum, Settings, Notifications, Search, Menu as MenuIcon,
-  Logout, Person, ChevronRight, Close, KeyboardArrowDown, AdminPanelSettings, HelpOutline,
+  Logout, Person, ChevronRight, Close, KeyboardArrowDown, AdminPanelSettings, HelpOutline, Badge as BadgeIcon,
 } from '@mui/icons-material';
 
 const baseNavItems = [
   { label: 'Dashboard', icon: Dashboard, path: '/dashboard' },
   { label: 'Students', icon: People, path: '/students' },
   { label: 'Teachers', icon: School, path: '/teachers' },
+  { label: 'HR', icon: BadgeIcon, path: '/hr' },
   { label: 'Academics', icon: MenuBook, path: '/academics' },
   { label: 'Finance', icon: AccountBalance, path: '/finance' },
   { label: 'Communication', icon: Forum, path: '/communication' },

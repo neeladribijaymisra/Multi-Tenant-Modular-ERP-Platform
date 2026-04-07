@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import DashboardPage from './pages/DashboardPage';
 import StudentsPage from './pages/StudentsPage';
 import TeachersPage from './pages/TeachersPage';
+import HRPage from './pages/HRPage';
 import AcademicsPage from './pages/AcademicsPage';
 import FinancePage from './pages/FinancePage';
 import CommunicationPage from './pages/CommunicationPage';
@@ -47,6 +48,7 @@ function AppRoutes() {
         <Route path="dashboard" element={<MasterRoute><DashboardPage /></MasterRoute>} />
         <Route path="students" element={<MasterRoute><StudentsPage /></MasterRoute>} />
         <Route path="teachers" element={<MasterRoute><TeachersPage /></MasterRoute>} />
+        <Route path="hr" element={<MasterRoute><HRPage /></MasterRoute>} />
         <Route path="academics" element={<MasterRoute><AcademicsPage /></MasterRoute>} />
         <Route path="finance/*" element={<FinancePage />} />
         <Route path="communication" element={<MasterRoute><CommunicationPage /></MasterRoute>} />
