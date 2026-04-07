@@ -22,6 +22,7 @@ import communicationRoutes from './routes/communicationRoutes.js';
 import dashboardRoutes from './routes/dashboardRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import reminderRoutes from './routes/reminderRoutes.js';
+import hrRoutes from './routes/hrRoutes.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -92,6 +93,7 @@ app.use('/api/teachers', teacherRoutes);
 app.use('/api/academics', academicsRoutes);
 app.use('/api/finance', financeRoutes);
 app.use('/api/payroll', payrollRoutes);
+app.use('/api/hr', hrRoutes);
 app.use('/api/communication', communicationRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/admins', adminRoutes);
